@@ -1,36 +1,41 @@
-name: Build and Deploy Keybow App
+name: Build Keybow Configurator EXE
 
 on:
   push:
-    branches:
-      - main  # or your preferred branch
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up Python 3.x
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller
-          python -m ensurepip --upgrade  # Ensure pip and setuptools are installed properly
-          python -m tkinter  # Ensure tkinter is available
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
-      - name: Build the application
-        run: |
-          pyinstaller --onefile keybow.py
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller -r requirements.txt
 
-      - name: Upload the built .exe as an artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: keybow-executable
-          path: dist/keybow.exe  # Adjust path if necessary
+    - name: Build EXE with PyInstaller
+      run: pyinstaller keybow.py --onefile --noconsole
+
+    - name: Upload EXE artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: keybow-app
+        path: dist/keybow.exe
