@@ -1,34 +1,28 @@
-name: Build EXE with PyInstaller
-
-on:
-  push:
-    branches:
-      - main
-
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          python -m ensurepip --upgrade  # Ensure pip and setuptools are installed properly
+          python -m tkinter  # Ensure tkinter is available
 
-    - name: Build EXE with PyInstaller
-      run: |
-        pyinstaller --onefile your_script.py
+      - name: Build the application
+        run: |
+          pyinstaller --onefile keybow.py
 
-    - name: Upload the EXE file
-      uses: actions/upload-artifact@v4
-      with:
-        name: keybow-exe
-        path: dist/your_exe_file.exe
+      - name: Upload the built .exe as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keybow-executable
+          path: dist/keybow.exe  # Adjust path if necessary
