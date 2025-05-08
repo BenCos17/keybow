@@ -82,6 +82,9 @@ jobs:
           git push origin "$new_tag"
         }
 
+        # Set the tag in environment variables for the release step
+        echo "NEW_TAG=$new_tag" >> $GITHUB_ENV
+
     - name: Create GitHub Release
       id: release
       uses: softprops/action-gh-release@v1
@@ -89,5 +92,6 @@ jobs:
         files: |
           dist/keybow.exe
           keybow-files.zip
+        tag_name: ${{ env.NEW_TAG }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
