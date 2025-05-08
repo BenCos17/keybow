@@ -57,21 +57,27 @@ jobs:
 
     - name: Get latest tag and create new one
       run: |
+        # Get the latest tag (if any)
         $latest_tag = git describe --tags $(git rev-list --tags --max-count=1) 2>$null
+        
+        # If no tags exist, start with v1
         if (-not $latest_tag) {
           $new_tag = "v1"
         } else {
+          # Extract the number from the latest tag, increment it, and set the new tag
           $version_number = $latest_tag.TrimStart('v')
           $new_version = [int]$version_number + 1
           $new_tag = "v$new_version"
         }
-        
+
+        Write-Host "New tag is $new_tag"
+
         # Check if the tag already exists in the remote repository
-        $existing_tag = git tag -l "$new_tag"
+        $existing_tag = git ls-remote --tags origin "$new_tag"
         if ($existing_tag) {
-          Write-Host "Tag $new_tag already exists, skipping tag creation."
+          Write-Host "Tag $new_tag already exists on the remote, skipping tag creation."
         } else {
-          Write-Host "New tag is $new_tag"
+          # Create and push the new tag
           git tag -a "$new_tag" -m "Release $new_tag"
           git push origin "$new_tag"
         }
