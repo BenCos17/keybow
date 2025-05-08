@@ -11,10 +11,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: 3.9
 
@@ -28,7 +28,7 @@ jobs:
         pyinstaller --onefile your_script.py
 
     - name: Upload the EXE file
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: keybow-exe
         path: dist/your_exe_file.exe
