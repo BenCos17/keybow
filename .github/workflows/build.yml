@@ -1,6 +1,14 @@
+name: Build and Deploy Keybow App
+
+on:
+  push:
+    branches:
+      - main  # or your preferred branch
+
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
