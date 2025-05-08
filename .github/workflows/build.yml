@@ -61,7 +61,8 @@ jobs:
       shell: pwsh
       run: |
         git fetch --tags
-        $tags = git tag --sort=-v:refname | Where-Object { $_ -match '^v\d+$' }
+        $tags = git tag --sort=-v:refname | ForEach-Object { "$_" } | Where-Object { $_ -match '^v\d+$' }
+
         if ($tags.Count -gt 0) {
           $lastTag = $tags[0]
           $last = $lastTag.Substring(1)
@@ -69,8 +70,8 @@ jobs:
         } else {
           $new = 1
         }
-        $new_tag = "v$($new)"
 
+        $new_tag = "v$($new)"
         $existing_remote_tags = git ls-remote --tags origin | Select-String -Pattern "refs/tags/$new_tag"
         if (-not $existing_remote_tags) {
           git tag -a "$new_tag" -m "Release $new_tag"
@@ -80,6 +81,7 @@ jobs:
         }
 
         echo "tag_name=$new_tag" >> $env:GITHUB_OUTPUT
+
 
 
 
