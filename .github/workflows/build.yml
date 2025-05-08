@@ -57,7 +57,7 @@ jobs:
 
     - name: Get latest tag and create new one
       run: |
-        $latest_tag = git describe --tags $(git rev-list --tags --max-count=1)
+        $latest_tag = git describe --tags $(git rev-list --tags --max-count=1) 2>$null
         if (-not $latest_tag) {
           $new_tag = "v1"
         } else {
