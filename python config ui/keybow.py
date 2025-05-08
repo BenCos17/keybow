@@ -1,17 +1,23 @@
 import json
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import filedialog, ttk, messagebox
+
+# Global configuration object
+config = {}
 
 def load_config():
     path = filedialog.askopenfilename(filetypes=[("JSON Files", "*.json")])
     if not path:
         return
-    with open(path, "r") as f:
-        global config
-        config = json.load(f)
-    layer_select['values'] = list(config['layers'].keys())
-    layer_select.current(0)
-    show_keys()
+    try:
+        with open(path, "r") as f:
+            global config
+            config = json.load(f)
+        layer_select['values'] = list(config['layers'].keys())
+        layer_select.current(0)
+        show_keys()
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load config: {e}")
 
 def show_keys(*_):
     layer_id = layer_select.get()
@@ -21,12 +27,31 @@ def show_keys(*_):
         for k, v in keys.items():
             keys_text.insert(tk.END, f"Key {k}: {v}\n")
 
+def update_keys():
+    layer_id = layer_select.get()
+    keys = {}
+    for line in keys_text.get("1.0", tk.END).splitlines():
+        if line.strip():
+            try:
+                key, value = line.split(":", 1)
+                key = key.strip().replace("Key", "").strip()
+                keys[key] = value.strip()
+            except ValueError:
+                continue  # Ignore lines that don't match "Key #: value" format
+    if layer_id in config["layers"]:
+        config["layers"][layer_id]["keys"] = keys
+
 def save_config():
+    update_keys()  # Ensure we update the keys before saving
     path = filedialog.asksaveasfilename(defaultextension=".json")
     if not path:
         return
-    with open(path, "w") as f:
-        json.dump(config, f, indent=2)
+    try:
+        with open(path, "w") as f:
+            json.dump(config, f, indent=2)
+        messagebox.showinfo("Success", "Config saved successfully!")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to save config: {e}")
 
 app = tk.Tk()
 app.title("Keybow Configurator")
