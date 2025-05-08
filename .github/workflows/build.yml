@@ -1,22 +1,22 @@
-name: Build EXE
+name: Build EXE with PyInstaller
 
 on:
   push:
     branches:
-      - main   # or any branch you want to automate
+      - main
 
 jobs:
   build:
-    runs-on: windows-latest  # Use the latest Windows runner
+    runs-on: windows-latest
 
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-    - name: Set up Python 3.x
-      uses: actions/setup-python@v2
+    - name: Set up Python
+      uses: actions/setup-python@v3
       with:
-        python-version: '3.8'  # Choose the Python version
+        python-version: 3.9
 
     - name: Install dependencies
       run: |
@@ -25,15 +25,10 @@ jobs:
 
     - name: Build EXE with PyInstaller
       run: |
-        pyinstaller --onefile --noconsole app.py  # Customize with your app's main file name
-        # --noconsole removes the console window if you don't want it
+        pyinstaller --onefile your_script.py
 
-    - name: Upload EXE as Artifact
-      uses: actions/upload-artifact@v2
+    - name: Upload the EXE file
+      uses: actions/upload-artifact@v3
       with:
-        name: KeybowApp
-        path: dist/app.exe  # Path to your generated EXE
-
-    - name: Clean up
-      run: |
-        del /f /q dist\*  # Delete the generated EXE from the runner to avoid clutter
+        name: keybow-exe
+        path: dist/your_exe_file.exe
