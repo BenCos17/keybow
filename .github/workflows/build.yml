@@ -54,21 +54,23 @@ jobs:
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
+
+        
     - name: Create new tag if needed
       id: tag
       shell: pwsh
       run: |
         git fetch --tags
-        $tags = git tag --sort=-v:refname
-        if ($tags) {
-          $last = $tags[0].TrimStart('v')
+        $tags = git tag --sort=-v:refname | Where-Object { $_ -match '^v\d+$' }
+        if ($tags.Count -gt 0) {
+          $lastTag = $tags[0]
+          $last = $lastTag.Substring(1)
           $new = [int]$last + 1
         } else {
           $new = 1
         }
         $new_tag = "v$($new)"
 
-        # Check if the tag exists remotely
         $existing_remote_tags = git ls-remote --tags origin | Select-String -Pattern "refs/tags/$new_tag"
         if (-not $existing_remote_tags) {
           git tag -a "$new_tag" -m "Release $new_tag"
@@ -78,6 +80,7 @@ jobs:
         }
 
         echo "tag_name=$new_tag" >> $env:GITHUB_OUTPUT
+
 
 
     - name: Create GitHub Release
