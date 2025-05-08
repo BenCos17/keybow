@@ -32,7 +32,7 @@ jobs:
         pip install pyinstaller -r requirements.txt
 
     - name: Build EXE with PyInstaller
-      run: pyinstaller keybow.py --onefile --noconsole
+      run: pyinstaller "python config ui/keybow.py" --onefile --noconsole
 
     - name: Upload EXE artifact
       uses: actions/upload-artifact@v4
