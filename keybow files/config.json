@@ -1,0 +1,60 @@
+{
+  "layers": {
+    "1": {
+      "name": "Numpad",
+      "color": [
+        255,
+        0,
+        255
+      ],
+      "keys": {
+        "4": "KEYPAD_ZERO",
+        "5": "KEYPAD_ONE",
+        "6": "KEYPAD_FOUR",
+        "7": "KEYPAD_SEVEN",
+        "8": "DELETE",
+        "9": "KEYPAD_TWO",
+        "10": "KEYPAD_FIVE",
+        "11": "KEYPAD_EIGHT",
+        "12": "ENTER",
+        "13": "KEYPAD_THREE",
+        "14": "KEYPAD_SIX",
+        "15": "KEYPAD_NINE"
+      }
+    },
+    "2": {
+      "name": "Strings",
+      "color": [
+        0,
+        255,
+        255
+      ],
+      "keys": {
+        "5": "liquor ",
+        "6": "with ",
+        "7": "pack ",
+        "9": "jugs ",
+        "10": "five ",
+        "11": "my ",
+        "14": "dozen ",
+        "15": "box "
+      }
+    },
+    "3": {
+      "name": "Media",
+      "color": [
+        255,
+        255,
+        0
+      ],
+      "keys": {
+        "6": "VOLUME_DECREMENT",
+        "7": "SCAN_PREVIOUS_TRACK",
+        "10": "MUTE",
+        "11": "PLAY_PAUSE",
+        "14": "VOLUME_INCREMENT",
+        "15": "SCAN_NEXT_TRACK"
+      }
+    }
+  }
+}
