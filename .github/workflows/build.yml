@@ -65,9 +65,16 @@ jobs:
           $new_version = [int]$version_number + 1
           $new_tag = "v$new_version"
         }
-        Write-Host "New tag is $new_tag"
-        git tag -a "$new_tag" -m "Release $new_tag"
-        git push origin "$new_tag"
+        
+        # Check if the tag already exists in the remote repository
+        $existing_tag = git tag -l "$new_tag"
+        if ($existing_tag) {
+          Write-Host "Tag $new_tag already exists, skipping tag creation."
+        } else {
+          Write-Host "New tag is $new_tag"
+          git tag -a "$new_tag" -m "Release $new_tag"
+          git push origin "$new_tag"
+        }
 
     - name: Create GitHub Release
       id: release
