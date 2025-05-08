@@ -55,10 +55,19 @@ jobs:
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
 
-    - name: Create and push Git tag
+    - name: Get latest tag and create new one
       run: |
-        git tag "v${{ github.run_number }}"
-        git push origin "v${{ github.run_number }}"
+        latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
+        if [[ -z "$latest_tag" ]]; then
+          new_tag="v1"
+        else
+          version_number=$(echo "$latest_tag" | sed 's/v//')
+          new_version=$((version_number + 1))
+          new_tag="v$new_version"
+        fi
+        echo "New tag is $new_tag"
+        git tag -a "$new_tag" -m "Release $new_tag"
+        git push origin "$new_tag"
 
     - name: Create GitHub Release
       id: release
