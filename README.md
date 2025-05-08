@@ -1,4 +1,4 @@
--get update# Keybow Configurator
+# Keybow Configurator
 
 Keybow Configurator is a simple graphical interface built with Python and Tkinter, allowing users to manage and edit configurations for Keybow devices.
 
