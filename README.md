@@ -27,3 +27,4 @@ An example `config.json` is available in the `keybow` folder to help you get sta
 4. Modify the key assignments in the displayed text area.
 5. Click "Save Config" to save the changes to a new JSON file.
 
+the files in the keybow folder need to be copied to the drive the keybow shows as in the os
