@@ -54,11 +54,11 @@ jobs:
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-
     - name: Create new tag if needed
       id: tag
       shell: pwsh
       run: |
+        git fetch --tags
         $tags = git tag --sort=-v:refname
         if ($tags) {
           $last = $tags[0].TrimStart('v')
@@ -67,9 +67,18 @@ jobs:
           $new = 1
         }
         $new_tag = "v$($new)"
-        git tag -a "$new_tag" -m "Release $new_tag"
-        git push origin "$new_tag"
+
+        # Check if the tag exists remotely
+        $existing_remote_tags = git ls-remote --tags origin | Select-String -Pattern "refs/tags/$new_tag"
+        if (-not $existing_remote_tags) {
+          git tag -a "$new_tag" -m "Release $new_tag"
+          git push origin "$new_tag"
+        } else {
+          Write-Host "Tag $new_tag already exists remotely. Skipping creation."
+        }
+
         echo "tag_name=$new_tag" >> $env:GITHUB_OUTPUT
+
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
