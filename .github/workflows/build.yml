@@ -36,7 +36,8 @@ jobs:
 
     - name: Zip keybow files folder
       run: |
-        powershell Compress-Archive -LiteralPath "keybow files" -DestinationPath keybow-files.zip
+        powershell Compress-Archive -Path 'keybow files\*' -DestinationPath keybow-files.zip
+
 
     - name: Upload EXE artifact
       uses: actions/upload-artifact@v4
