@@ -64,7 +64,7 @@ jobs:
         $tags = git tag --sort=-v:refname | ForEach-Object { "$_" } | Where-Object { $_ -match '^v\d+$' }
 
         if ($tags.Count -gt 0) {
-          $lastTag = $tags[0]
+          $lastTag = "$($tags[0])"
           $last = $lastTag.Substring(1)
           $new = [int]$last + 1
         } else {
@@ -80,7 +80,8 @@ jobs:
           Write-Host "Tag $new_tag already exists remotely. Skipping creation."
         }
 
-        echo "tag_name=$new_tag" >> $env:GITHUB_OUTPUT
+        "tag_name=$new_tag" >> $env:GITHUB_OUTPUT
+
 
 
 
