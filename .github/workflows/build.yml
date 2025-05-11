@@ -61,26 +61,46 @@ jobs:
       shell: pwsh
       run: |
         git fetch --tags
-        $tags = git tag --sort=-v:refname | ForEach-Object { "$_" } | Where-Object { $_ -match '^v\d+$' }
+
+        # Get semantic tags like v1.0, v2.3
+        $tags = git tag --sort=-v:refname | Where-Object { $_ -match '^v\d+\.\d+$' }
 
         if ($tags.Count -gt 0) {
           $lastTag = "$($tags[0])"
-          $last = $lastTag.Substring(1)
-          $new = [int]$last + 1
+
+          if ($lastTag -match '^v(\d+)\.(\d+)$') {
+            $major = [int]$matches[1]
+            $minor = [int]$matches[2]
+          } else {
+            throw "Failed to parse latest tag: $lastTag"
+          }
         } else {
-          $new = 1
+          $major = 1
+          $minor = 0
         }
 
-        $new_tag = "v$($new)"
-        $existing_remote_tags = git ls-remote --tags origin | Select-String -Pattern "refs/tags/$new_tag"
-        if (-not $existing_remote_tags) {
-          git tag -a "$new_tag" -m "Release $new_tag"
-          git push origin "$new_tag"
+        # Check latest commit message for 'MAJOR:'
+        $commitMsg = git log -1 --pretty=%B
+        if ($commitMsg -match '(?i)MAJOR:') {
+          $major += 1
+          $minor = 0
         } else {
-          Write-Host "Tag $new_tag already exists remotely. Skipping creation."
+          $minor += 1
         }
 
-        "tag_name=$new_tag" >> $env:GITHUB_OUTPUT
+        $newTag = "v$major.$minor"
+
+        # Check if tag already exists remotely
+        $existingRemoteTag = git ls-remote --tags origin | Select-String "refs/tags/$newTag"
+        if (-not $existingRemoteTag) {
+          git tag -a "$newTag" -m "Release $newTag"
+          git push origin "$newTag"
+        } else {
+          Write-Host "Tag $newTag already exists remotely. Skipping creation."
+        }
+
+        "tag_name=$newTag" >> $env:GITHUB_OUTPUT
+
 
 
 
