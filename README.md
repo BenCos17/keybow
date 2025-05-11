@@ -5,7 +5,7 @@ Keybow Configurator is a simple graphical interface built with Python and Tkinte
 ## Features
 
 - Load and edit JSON configuration files for Keybow keymaps.
-- Switch between different layers using a dropdown menu.
+- Switch between different layersto edit  using a dropdown menu.
 - View and update key assignments for each layer.
 - Save the modified configuration back to a JSON file.
 
