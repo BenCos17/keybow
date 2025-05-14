@@ -2,7 +2,7 @@ name: Build Keybow Configurator EXE
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -18,14 +18,6 @@ jobs:
       with:
         python-version: '3.9'
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -35,8 +27,7 @@ jobs:
       run: pyinstaller "python config ui/keybow.py" --onefile --noconsole
 
     - name: Zip keybow files folder
-      run: |
-        powershell -Command "Compress-Archive -Path 'keybow files\\*' -DestinationPath 'keybow-files.zip'"
+      run: powershell -Command "Compress-Archive -Path 'keybow files\\*' -DestinationPath 'keybow-files.zip'"
 
     - name: Upload EXE artifact
       uses: actions/upload-artifact@v4
@@ -55,31 +46,28 @@ jobs:
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
 
-        
     - name: Create new tag if needed
       id: tag
       shell: pwsh
       run: |
         git fetch --tags
 
-        # Get semantic tags like v1.0, v2.3
-        $tags = git tag --sort=-v:refname | Where-Object { $_ -match '^v\d+\.\d+$' }
+        # Get the latest tags sorted in descending order
+        $tags = git tag --sort=-v:refname | Where-Object { $_ -match '^v\d+\.\d+' }
+        
+        # If tags exist, use the latest one, otherwise start at v1.0
+        $lastTag = if ($tags.Count -gt 0) { $tags[0] } else { "v0.0" }
 
-        if ($tags.Count -gt 0) {
-          $lastTag = "$($tags[0])"
-
-          if ($lastTag -match '^v(\d+)\.(\d+)$') {
-            $major = [int]$matches[1]
-            $minor = [int]$matches[2]
-          } else {
-            throw "Failed to parse latest tag: $lastTag"
-          }
+        # Parse major and minor versions
+        if ($lastTag -match '^v(\d+)\.(\d+)$') {
+          $major = [int]$matches[1]
+          $minor = [int]$matches[2]
         } else {
           $major = 1
           $minor = 0
         }
 
-        # Check latest commit message for 'MAJOR:'
+        # Check the latest commit message for 'MAJOR:' keyword to increment major version
         $commitMsg = git log -1 --pretty=%B
         if ($commitMsg -match '(?i)MAJOR:') {
           $major += 1
@@ -88,23 +76,18 @@ jobs:
           $minor += 1
         }
 
+        # Create the new tag
         $newTag = "v$major.$minor"
 
-        # Check if tag already exists remotely
-        $existingRemoteTag = git ls-remote --tags origin | Select-String "refs/tags/$newTag"
-        if (-not $existingRemoteTag) {
+        # Push the new tag if it doesn't exist
+        if (-not (git ls-remote --tags origin | Select-String "refs/tags/$newTag")) {
           git tag -a "$newTag" -m "Release $newTag"
           git push origin "$newTag"
         } else {
-          Write-Host "Tag $newTag already exists remotely. Skipping creation."
+          Write-Host "Tag $newTag already exists."
         }
 
         "tag_name=$newTag" >> $env:GITHUB_OUTPUT
-
-
-
-
-
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
