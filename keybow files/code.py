@@ -45,11 +45,19 @@ def parse_key(key):
 # Set LEDs for the selected layer
 def set_layer_leds(layer):
     layer_conf = config["layers"].get(str(layer), {})
-    color = tuple(layer_conf.get("color", [0, 0, 255]))  # Default to blue if no color
+    default_color = tuple(layer_conf.get("color", [0, 0, 255]))
+    keys_to_set = layer_conf.get("keys", {})
+
+    # Reset all LEDs
     for i in range(4, 16):
-        keys[i].set_led(0, 0, 0)  # Reset all LEDs
-    for k in layer_conf.get("keys", {}):
-        keys[int(k)].set_led(*color)
+        keys[i].set_led(0, 0, 0)
+
+    for k, v in keys_to_set.items():
+        k_int = int(k)
+        if isinstance(v, dict) and "color" in v:
+            keys[k_int].set_led(*v["color"])
+        else:
+            keys[k_int].set_led(*default_color)
 
 # Initialize LEDs for the starting layer
 set_layer_leds(current_layer)
@@ -57,12 +65,13 @@ set_layer_leds(current_layer)
 # Main loop
 while True:
     keybow.update()
-    
+
     # Handle modifier (layer switch) logic
     if modifier.held:
         keys[0].led_off()  # Turn off modifier LED
         for i in selectors:
-            keys[i].set_led(*config["layers"].get(str(i), {}).get("color", [0, 0, 0]))  # Set LED color for selectors
+            color = config["layers"].get(str(i), {}).get("color", [0, 0, 0])
+            keys[i].set_led(*color)
             if selectors[i].pressed:
                 current_layer = i
                 set_layer_leds(i)  # Update LEDs for the new layer
@@ -72,11 +81,13 @@ while True:
         keys[0].set_led(0, 255, 0)  # Green LED for modifier when not held
 
     # Handle key presses for the current layer
-    for k, v in config["layers"].get(str(current_layer), {}).get("keys", {}).items():
-        k = int(k)
-        if keys[k].pressed and not fired:
+    keys_conf = config["layers"].get(str(current_layer), {}).get("keys", {})
+    for k, v in keys_conf.items():
+        k_int = int(k)
+        if keys[k_int].pressed and not fired:
             fired = True
-            parsed = parse_key(v)
+            key_val = v["code"] if isinstance(v, dict) and "code" in v else v
+            parsed = parse_key(key_val)
             if isinstance(parsed, int):
                 debounce = short_debounce
                 keyboard.send(parsed)
