@@ -63,7 +63,7 @@ jobs:
         git fetch --tags
 
         # Get semantic tags like v1.0, v2.3
-        $tags = git tag --sort=-v:refname | Where-Object { $_ -match '^v\d+\.\d+$' }
+        $tags = git tag --sort=-v:refname | Where-Object { $_ -match '^v\d+\.\d+' }
 
         if ($tags.Count -gt 0) {
           $lastTag = "$($tags[0])"
