@@ -1,9 +1,19 @@
 import json
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
+import requests
+import os
+import zipfile
+import tempfile
+import shutil
+from pathlib import Path
 
 # Global configuration object
 config = {}
+
+# GitHub repository information
+GITHUB_REPO = "pimoroni/keybow-firmware"  # Example - you can change this
+GITHUB_API_BASE = "https://api.github.com/repos"
 
 # Preset configurations for easy setup
 PRESET_LAYERS = {
@@ -72,6 +82,148 @@ PRESET_APPS = {
     "Device Manager": {"shortcut": "WIN+R", "command": "devmgmt.msc"},
     "Services": {"shortcut": "WIN+R", "command": "services.msc"}
 }
+
+def check_for_updates():
+    """Check for updates from GitHub"""
+    try:
+        # Get the latest commit info for the main branch
+        response = requests.get(f"{GITHUB_API_BASE}/{GITHUB_REPO}/commits/main")
+        if response.status_code == 200:
+            commit_data = response.json()
+            latest_commit = commit_data['sha'][:8]  # Short commit hash
+            commit_date = commit_data['commit']['author']['date'][:10]  # Date only
+            
+            # Get the raw content of code.py
+            raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/code.py"
+            
+            # Show update dialog
+            update_dialog = tk.Toplevel()
+            update_dialog.title("Update Available")
+            update_dialog.geometry("500x300")
+            
+            tk.Label(update_dialog, text=f"Latest commit: {latest_commit}", font=("Arial", 12, "bold")).pack(pady=10)
+            tk.Label(update_dialog, text=f"Date: {commit_date}").pack(pady=5)
+            tk.Label(update_dialog, text="Would you like to download and install the latest firmware?").pack(pady=5)
+            
+            # Show commit message
+            notes_text = tk.Text(update_dialog, height=8, width=60)
+            notes_text.pack(pady=10, padx=10)
+            notes_text.insert(tk.END, commit_data['commit']['message'])
+            notes_text.config(state=tk.DISABLED)
+            
+            def download_update():
+                try:
+                    update_dialog.destroy()
+                    download_and_install_firmware(raw_url, latest_commit)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to download update: {e}")
+            
+            def skip_update():
+                update_dialog.destroy()
+            
+            button_frame = tk.Frame(update_dialog)
+            button_frame.pack(pady=10)
+            tk.Button(button_frame, text="Download & Install", command=download_update, bg="green", fg="white").pack(side=tk.LEFT, padx=5)
+            tk.Button(button_frame, text="Skip", command=skip_update).pack(side=tk.LEFT, padx=5)
+            
+        else:
+            messagebox.showinfo("No Updates", "No updates available or unable to check for updates.")
+            
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to check for updates: {e}")
+
+def download_and_install_firmware(raw_url, commit_hash):
+    """Download and install firmware from GitHub"""
+    try:
+        # Create progress dialog
+        progress_dialog = tk.Toplevel()
+        progress_dialog.title("Downloading Firmware")
+        progress_dialog.geometry("400x150")
+        progress_dialog.transient()
+        
+        tk.Label(progress_dialog, text=f"Downloading firmware commit {commit_hash}...").pack(pady=10)
+        progress_bar = ttk.Progressbar(progress_dialog, mode='indeterminate')
+        progress_bar.pack(pady=10, padx=20, fill=tk.X)
+        progress_bar.start()
+        
+        status_label = tk.Label(progress_dialog, text="Downloading...")
+        status_label.pack(pady=5)
+        
+        progress_dialog.update()
+        
+        # Download the firmware file directly
+        status_label.config(text="Downloading code.py from GitHub...")
+        progress_dialog.update()
+        
+        response = requests.get(raw_url)
+        if response.status_code != 200:
+            raise Exception(f"Failed to download: HTTP {response.status_code}")
+        
+        # Save to temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.py') as tmp_file:
+            tmp_file.write(response.content)
+            tmp_file_path = tmp_file.name
+        
+        status_label.config(text="Installing firmware...")
+        progress_dialog.update()
+        
+        # Copy to Keybow directory
+        keybow_path = get_keybow_path()
+        if keybow_path:
+            shutil.copy2(tmp_file_path, os.path.join(keybow_path, 'code.py'))
+            messagebox.showinfo("Success", f"Firmware updated to commit {commit_hash}!\nPlease restart your Keybow2040.")
+        else:
+            # If we can't find the Keybow path, save to a known location
+            save_path = os.path.join(os.path.expanduser("~"), "Downloads", f"keybow_firmware_{commit_hash}.py")
+            shutil.copy2(tmp_file_path, save_path)
+            messagebox.showinfo("Success", f"Firmware downloaded to: {save_path}\nPlease copy this file to your Keybow2040 manually.")
+        
+        # Cleanup
+        os.unlink(tmp_file_path)
+        
+        progress_dialog.destroy()
+        
+    except Exception as e:
+        progress_dialog.destroy()
+        messagebox.showerror("Error", f"Failed to install firmware: {e}")
+
+def get_keybow_path():
+    """Try to find the Keybow2040 mount point"""
+    possible_paths = [
+        "/media/*/KEYBOW2040",  # Linux
+        "/Volumes/KEYBOW2040",  # macOS
+        "C:/KEYBOW2040",        # Windows
+        "D:/KEYBOW2040",        # Windows alternative
+    ]
+    
+    for path_pattern in possible_paths:
+        if '*' in path_pattern:
+            import glob
+            matches = glob.glob(path_pattern)
+            if matches:
+                return matches[0]
+        elif os.path.exists(path_pattern):
+            return path_pattern
+    
+    return None
+
+def upload_config_to_board():
+    """Upload the current config to the Keybow2040 board"""
+    try:
+        keybow_path = get_keybow_path()
+        if not keybow_path:
+            messagebox.showerror("Error", "Could not find Keybow2040. Please make sure it's connected and mounted.")
+            return
+        
+        # Save current config
+        config_path = os.path.join(keybow_path, 'config.json')
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=2)
+        
+        messagebox.showinfo("Success", f"Config uploaded to Keybow2040!\nPath: {config_path}")
+        
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to upload config: {e}")
 
 def load_config():
     path = filedialog.askopenfilename(filetypes=[("JSON Files", "*.json")])
@@ -493,7 +645,7 @@ def save_config():
 # GUI setup
 app = tk.Tk()
 app.title("Keybow Configurator - Enhanced")
-app.geometry("800x600")
+app.geometry("900x700")
 
 # Top frame for controls
 top_frame = tk.Frame(app)
@@ -505,6 +657,13 @@ file_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
 tk.Button(file_frame, text="Load Config", command=load_config).pack(side=tk.LEFT, padx=5)
 tk.Button(file_frame, text="Save Config", command=save_config).pack(side=tk.LEFT, padx=5)
+
+# Board operations
+board_frame = tk.LabelFrame(top_frame, text="Board Operations")
+board_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+tk.Button(board_frame, text="Upload Config", command=upload_config_to_board, bg="blue", fg="white").pack(side=tk.LEFT, padx=5)
+tk.Button(board_frame, text="Check Updates", command=check_for_updates, bg="orange", fg="white").pack(side=tk.LEFT, padx=5)
 
 # Layer operations
 layer_frame = tk.LabelFrame(top_frame, text="Layer Operations")
@@ -543,8 +702,10 @@ Quick Start Guide:
 1. Use "Add Preset Layer" to quickly add common layer types (Numpad, Media, Gaming, Programming)
 2. Use "Add Apps Layer" to create a complete apps layer with common applications
 3. Use "Add App Key" to add individual app shortcuts
-4. Edit keys directly in the text area or use the buttons above
-5. Layer IDs must be 1-8, Key numbers must be 9-15 for content
+4. Use "Upload Config" to send your config directly to the Keybow2040 board
+5. Use "Check Updates" to automatically update the firmware from GitHub
+6. Edit keys directly in the text area or use the buttons above
+7. Layer IDs must be 1-8, Key numbers must be 9-15 for content
 """
 tk.Label(app, text=instructions, justify=tk.LEFT, fg="blue").pack(padx=10, pady=5)
 
