@@ -23,6 +23,7 @@ An example `config.json` is available in the `keybow` folder to help you get sta
 
  running from the exe:
  1. download the files from the latest release and copy the files in the keybow folder to the keybow itself
+    
  2.run the exe to create the config.json and edit (there's an example one in the keybow files folder so import that to it
 
  
