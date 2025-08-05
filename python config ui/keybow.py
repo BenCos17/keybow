@@ -12,7 +12,7 @@ from pathlib import Path
 config = {}
 
 # GitHub repository information
-GITHUB_REPO = "pimoroni/keybow-firmware"  # Example - you can change this
+GITHUB_REPO = "BenCos17/keybow"
 GITHUB_API_BASE = "https://api.github.com/repos"
 
 # Preset configurations for easy setup
