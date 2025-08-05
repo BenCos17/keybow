@@ -46,37 +46,37 @@
         "9": { 
           "type": "app", 
           "shortcut": "WIN+R", 
-          "command": "notepad", 
+          "command": "chrome.exe", 
           "color": [255, 128, 0] 
         },
         "10": { 
           "type": "app", 
           "shortcut": "WIN+R", 
-          "command": "calc", 
+          "command": "msedge.exe", 
           "color": [255, 128, 0] 
         },
         "11": { 
           "type": "app", 
           "shortcut": "WIN+R", 
-          "command": "mspaint", 
+          "command": "notepad", 
           "color": [255, 128, 0] 
         },
         "12": { 
           "type": "app", 
           "shortcut": "WIN+R", 
-          "command": "explorer", 
+          "command": "calc", 
           "color": [255, 128, 0] 
         },
         "13": { 
           "type": "app", 
           "shortcut": "WIN+R", 
-          "command": "cmd", 
+          "command": "explorer", 
           "color": [255, 128, 0] 
         },
         "14": { 
           "type": "app", 
           "shortcut": "WIN+R", 
-          "command": "control", 
+          "command": "cmd", 
           "color": [255, 128, 0] 
         },
         "15": { 
@@ -85,58 +85,6 @@
           "command": "taskmgr", 
           "color": [255, 128, 0] 
         }
-      }
-    },
-    "5": {
-      "name": "Gaming",
-      "color": [0, 255, 0],
-      "keys": {
-        "9": { "code": "W" },
-        "10": { "code": "A" },
-        "11": { "code": "S" },
-        "12": { "code": "D" },
-        "13": { "code": "SPACE" },
-        "14": { "code": "SHIFT" },
-        "15": { "code": "CONTROL" }
-      }
-    },
-    "6": {
-      "name": "Programming",
-      "color": [128, 0, 255],
-      "keys": {
-        "9": { "code": "CTRL+C" },
-        "10": { "code": "CTRL+V" },
-        "11": { "code": "CTRL+X" },
-        "12": { "code": "CTRL+Z" },
-        "13": { "code": "CTRL+A" },
-        "14": { "code": "CTRL+S" },
-        "15": { "code": "CTRL+F" }
-      }
-    },
-    "7": {
-      "name": "System",
-      "color": [255, 128, 0],
-      "keys": {
-        "9": { "code": "ALT+TAB" },
-        "10": { "code": "ALT+F4" },
-        "11": { "code": "CTRL+ALT+DELETE" },
-        "12": { "code": "WINDOWS" },
-        "13": { "code": "PRINT_SCREEN" },
-        "14": { "code": "SCROLL_LOCK" },
-        "15": { "code": "PAUSE" }
-      }
-    },
-    "8": {
-      "name": "Custom",
-      "color": [255, 255, 255],
-      "keys": {
-        "9": { "code": "F1" },
-        "10": { "code": "F2" },
-        "11": { "code": "F3" },
-        "12": { "code": "F4" },
-        "13": { "code": "F5" },
-        "14": { "code": "F6" },
-        "15": { "code": "F7" }
       }
     }
   }
