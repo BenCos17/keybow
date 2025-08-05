@@ -26,12 +26,22 @@ def show_keys(*_):
         keys = config["layers"][layer_id]["keys"]
         for k, v in keys.items():
             if isinstance(v, dict):
-                code = v.get("code", "")
-                color = v.get("color")
-                line = f"Key {k}: {code}"
-                if color:
-                    line += f" [{color[0]}, {color[1]}, {color[2]}]"
-                keys_text.insert(tk.END, line + "\n")
+                key_type = v.get("type", "key")
+                if key_type == "app":
+                    shortcut = v.get("shortcut", "")
+                    command = v.get("command", "")
+                    color = v.get("color")
+                    line = f"Key {k}: APP - {shortcut} -> {command}"
+                    if color:
+                        line += f" [{color[0]}, {color[1]}, {color[2]}]"
+                    keys_text.insert(tk.END, line + "\n")
+                else:
+                    code = v.get("code", "")
+                    color = v.get("color")
+                    line = f"Key {k}: {code}"
+                    if color:
+                        line += f" [{color[0]}, {color[1]}, {color[2]}]"
+                    keys_text.insert(tk.END, line + "\n")
             else:
                 keys_text.insert(tk.END, f"Key {k}: {v}\n")
 
@@ -44,20 +54,165 @@ def update_keys():
                 key_part, value_part = line.split(":", 1)
                 key = key_part.strip().replace("Key", "").strip()
 
-                # Split value and optional color
-                if "[" in value_part and "]" in value_part:
-                    code_part, color_part = value_part.split("[", 1)
-                    code = code_part.strip()
-                    color = json.loads("[" + color_part.strip())
-                    keys[key] = {"code": code, "color": color}
+                # Handle app type keys
+                if "APP -" in value_part:
+                    # Parse app configuration
+                    app_part = value_part.split("APP -", 1)[1].strip()
+                    if "->" in app_part:
+                        shortcut_part, command_part = app_part.split("->", 1)
+                        shortcut = shortcut_part.strip()
+                        command = command_part.strip()
+                        
+                        # Extract color if present
+                        color = None
+                        if "[" in command and "]" in command:
+                            command, color_part = command.rsplit("[", 1)
+                            command = command.strip()
+                            color = json.loads("[" + color_part.strip())
+                        
+                        keys[key] = {
+                            "type": "app",
+                            "shortcut": shortcut,
+                            "command": command
+                        }
+                        if color:
+                            keys[key]["color"] = color
+                    else:
+                        # Simple app without command
+                        keys[key] = {
+                            "type": "app",
+                            "shortcut": app_part
+                        }
                 else:
-                    code = value_part.strip()
-                    keys[key] = {"code": code}
+                    # Handle regular keys
+                    if "[" in value_part and "]" in value_part:
+                        code_part, color_part = value_part.split("[", 1)
+                        code = code_part.strip()
+                        color = json.loads("[" + color_part.strip())
+                        keys[key] = {"code": code, "color": color}
+                    else:
+                        code = value_part.strip()
+                        keys[key] = {"code": code}
             except Exception as e:
                 print(f"Skipping invalid line: {line} ({e})")
                 continue
     if layer_id in config["layers"]:
         config["layers"][layer_id]["keys"] = keys
+
+def add_app_key():
+    """Add a new app key with a dialog"""
+    dialog = tk.Toplevel()
+    dialog.title("Add App Key")
+    dialog.geometry("400x300")
+    
+    tk.Label(dialog, text="Key Number:").pack()
+    key_entry = tk.Entry(dialog)
+    key_entry.pack()
+    
+    tk.Label(dialog, text="Shortcut (e.g., WIN+R):").pack()
+    shortcut_entry = tk.Entry(dialog)
+    shortcut_entry.pack()
+    
+    tk.Label(dialog, text="Command (e.g., notepad):").pack()
+    command_entry = tk.Entry(dialog)
+    command_entry.pack()
+    
+    tk.Label(dialog, text="Color [R, G, B] (optional):").pack()
+    color_entry = tk.Entry(dialog)
+    color_entry.pack()
+    
+    def save_app():
+        try:
+            key = key_entry.get().strip()
+            shortcut = shortcut_entry.get().strip()
+            command = command_entry.get().strip()
+            color_text = color_entry.get().strip()
+            
+            if not key or not shortcut:
+                messagebox.showerror("Error", "Key number and shortcut are required!")
+                return
+            
+            app_config = {
+                "type": "app",
+                "shortcut": shortcut
+            }
+            
+            if command:
+                app_config["command"] = command
+            
+            if color_text:
+                try:
+                    color = json.loads(color_text)
+                    app_config["color"] = color
+                except:
+                    messagebox.showerror("Error", "Invalid color format! Use [R, G, B]")
+                    return
+            
+            # Add to current layer
+            layer_id = layer_select.get()
+            if layer_id in config["layers"]:
+                config["layers"][layer_id]["keys"][key] = app_config
+                show_keys()
+                dialog.destroy()
+            else:
+                messagebox.showerror("Error", "No layer selected!")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add app key: {e}")
+    
+    tk.Button(dialog, text="Add App Key", command=save_app).pack(pady=10)
+
+def add_layer():
+    """Add a new layer"""
+    dialog = tk.Toplevel()
+    dialog.title("Add Layer")
+    dialog.geometry("300x200")
+    
+    tk.Label(dialog, text="Layer ID:").pack()
+    layer_id_entry = tk.Entry(dialog)
+    layer_id_entry.pack()
+    
+    tk.Label(dialog, text="Layer Name:").pack()
+    layer_name_entry = tk.Entry(dialog)
+    layer_name_entry.pack()
+    
+    tk.Label(dialog, text="Default Color [R, G, B]:").pack()
+    color_entry = tk.Entry(dialog)
+    color_entry.pack()
+    
+    def save_layer():
+        try:
+            layer_id = layer_id_entry.get().strip()
+            layer_name = layer_name_entry.get().strip()
+            color_text = color_entry.get().strip()
+            
+            if not layer_id:
+                messagebox.showerror("Error", "Layer ID is required!")
+                return
+            
+            new_layer = {
+                "name": layer_name or f"Layer {layer_id}",
+                "keys": {}
+            }
+            
+            if color_text:
+                try:
+                    color = json.loads(color_text)
+                    new_layer["color"] = color
+                except:
+                    messagebox.showerror("Error", "Invalid color format! Use [R, G, B]")
+                    return
+            
+            config["layers"][layer_id] = new_layer
+            layer_select['values'] = list(config['layers'].keys())
+            layer_select.set(layer_id)
+            show_keys()
+            dialog.destroy()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add layer: {e}")
+    
+    tk.Button(dialog, text="Add Layer", command=save_layer).pack(pady=10)
 
 def save_config():
     update_keys()
@@ -73,14 +228,43 @@ def save_config():
 
 # GUI setup
 app = tk.Tk()
-app.title("Keybow Configurator")
+app.title("Keybow Configurator - App Launcher Support")
+app.geometry("600x500")
 
-tk.Button(app, text="Load Config", command=load_config).pack()
-layer_select = ttk.Combobox(app, state="readonly")
-layer_select.pack()
-tk.Button(app, text="Show Keys", command=show_keys).pack()
-keys_text = tk.Text(app, width=50, height=15)
-keys_text.pack()
-tk.Button(app, text="Save Config", command=save_config).pack()
+# Top frame for controls
+top_frame = tk.Frame(app)
+top_frame.pack(fill=tk.X, padx=10, pady=5)
+
+tk.Button(top_frame, text="Load Config", command=load_config).pack(side=tk.LEFT, padx=5)
+tk.Button(top_frame, text="Save Config", command=save_config).pack(side=tk.LEFT, padx=5)
+tk.Button(top_frame, text="Add Layer", command=add_layer).pack(side=tk.LEFT, padx=5)
+tk.Button(top_frame, text="Add App Key", command=add_app_key).pack(side=tk.LEFT, padx=5)
+
+# Layer selection
+layer_frame = tk.Frame(app)
+layer_frame.pack(fill=tk.X, padx=10, pady=5)
+tk.Label(layer_frame, text="Layer:").pack(side=tk.LEFT)
+layer_select = ttk.Combobox(layer_frame, state="readonly")
+layer_select.pack(side=tk.LEFT, padx=5)
+layer_select.bind('<<ComboboxSelected>>', show_keys)
+
+# Keys display
+keys_frame = tk.Frame(app)
+keys_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+tk.Label(keys_frame, text="Keys Configuration (Format: Key X: CODE or Key X: APP - SHORTCUT -> COMMAND)").pack()
+
+keys_text = tk.Text(keys_frame, width=70, height=20)
+keys_text.pack(fill=tk.BOTH, expand=True)
+
+# Instructions
+instructions = """
+Instructions:
+- Regular keys: Key X: CODE [R, G, B]
+- App keys: Key X: APP - WIN+R -> notepad [255, 128, 0]
+- Use "Add App Key" button for easy app key creation
+- Use "Add Layer" button to create new layers
+"""
+tk.Label(app, text=instructions, justify=tk.LEFT, fg="blue").pack(padx=10, pady=5)
 
 app.mainloop()

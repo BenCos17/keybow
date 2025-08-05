@@ -43,6 +43,84 @@
         "14": { "code": "VOLUME_INCREMENT" },
         "15": { "code": "SCAN_NEXT_TRACK" }
       }
+    },
+    "4": {
+      "name": "Apps",
+      "color": [255, 0, 0],
+      "keys": {
+        "4": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "notepad", 
+          "color": [255, 128, 0] 
+        },
+        "5": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "calc", 
+          "color": [255, 128, 0] 
+        },
+        "6": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "mspaint", 
+          "color": [255, 128, 0] 
+        },
+        "7": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "wordpad", 
+          "color": [255, 128, 0] 
+        },
+        "8": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "explorer", 
+          "color": [255, 128, 0] 
+        },
+        "9": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "cmd", 
+          "color": [255, 128, 0] 
+        },
+        "10": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "powershell", 
+          "color": [255, 128, 0] 
+        },
+        "11": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "control", 
+          "color": [255, 128, 0] 
+        },
+        "12": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "ms-settings:", 
+          "color": [255, 128, 0] 
+        },
+        "13": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "taskmgr", 
+          "color": [255, 128, 0] 
+        },
+        "14": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "devmgmt.msc", 
+          "color": [255, 128, 0] 
+        },
+        "15": { 
+          "type": "app", 
+          "shortcut": "WIN+R", 
+          "command": "services.msc", 
+          "color": [255, 128, 0] 
+        }
+      }
     }
   }
 }
