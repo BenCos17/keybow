@@ -5,6 +5,74 @@ from tkinter import filedialog, ttk, messagebox
 # Global configuration object
 config = {}
 
+# Preset configurations for easy setup
+PRESET_LAYERS = {
+    "Numpad": {
+        "color": [255, 0, 255],
+        "keys": {
+            "9": {"code": "KEYPAD_ZERO"},
+            "10": {"code": "KEYPAD_ONE"},
+            "11": {"code": "KEYPAD_TWO"},
+            "12": {"code": "KEYPAD_THREE"},
+            "13": {"code": "KEYPAD_FOUR"},
+            "14": {"code": "KEYPAD_FIVE"},
+            "15": {"code": "KEYPAD_SIX"}
+        }
+    },
+    "Media Controls": {
+        "color": [255, 255, 0],
+        "keys": {
+            "9": {"code": "VOLUME_DECREMENT"},
+            "10": {"code": "VOLUME_INCREMENT"},
+            "11": {"code": "MUTE"},
+            "12": {"code": "PLAY_PAUSE"},
+            "13": {"code": "SCAN_PREVIOUS_TRACK"},
+            "14": {"code": "SCAN_NEXT_TRACK"},
+            "15": {"code": "STOP"}
+        }
+    },
+    "Gaming": {
+        "color": [0, 255, 0],
+        "keys": {
+            "9": {"code": "W"},
+            "10": {"code": "A"},
+            "11": {"code": "S"},
+            "12": {"code": "D"},
+            "13": {"code": "SPACE"},
+            "14": {"code": "SHIFT"},
+            "15": {"code": "CONTROL"}
+        }
+    },
+    "Programming": {
+        "color": [128, 0, 255],
+        "keys": {
+            "9": {"code": "CTRL+C"},
+            "10": {"code": "CTRL+V"},
+            "11": {"code": "CTRL+X"},
+            "12": {"code": "CTRL+Z"},
+            "13": {"code": "CTRL+A"},
+            "14": {"code": "CTRL+S"},
+            "15": {"code": "CTRL+F"}
+        }
+    }
+}
+
+PRESET_APPS = {
+    "Chrome": {"shortcut": "WIN+R", "command": "chrome.exe"},
+    "Edge": {"shortcut": "WIN+R", "command": "msedge.exe"},
+    "Notepad": {"shortcut": "WIN+R", "command": "notepad"},
+    "Calculator": {"shortcut": "WIN+R", "command": "calc"},
+    "Paint": {"shortcut": "WIN+R", "command": "mspaint"},
+    "File Explorer": {"shortcut": "WIN+R", "command": "explorer"},
+    "Command Prompt": {"shortcut": "WIN+R", "command": "cmd"},
+    "PowerShell": {"shortcut": "WIN+R", "command": "powershell"},
+    "Control Panel": {"shortcut": "WIN+R", "command": "control"},
+    "Task Manager": {"shortcut": "WIN+R", "command": "taskmgr"},
+    "Settings": {"shortcut": "WIN+R", "command": "ms-settings:"},
+    "Device Manager": {"shortcut": "WIN+R", "command": "devmgmt.msc"},
+    "Services": {"shortcut": "WIN+R", "command": "services.msc"}
+}
+
 def load_config():
     path = filedialog.askopenfilename(filetypes=[("JSON Files", "*.json")])
     if not path:
@@ -13,16 +81,23 @@ def load_config():
         with open(path, "r") as f:
             global config
             config = json.load(f)
-        layer_select['values'] = list(config['layers'].keys())
-        layer_select.current(0)
-        show_keys()
+        update_layer_list()
+        if config.get("layers"):
+            layer_select.set(list(config['layers'].keys())[0])
+            show_keys()
+        messagebox.showinfo("Success", "Config loaded successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load config: {e}")
+
+def update_layer_list():
+    layer_select['values'] = list(config.get('layers', {}).keys())
+    if layer_select['values']:
+        layer_select.current(0)
 
 def show_keys(*_):
     layer_id = layer_select.get()
     keys_text.delete("1.0", tk.END)
-    if layer_id in config["layers"]:
+    if layer_id in config.get("layers", {}):
         keys = config["layers"][layer_id]["keys"]
         for k, v in keys.items():
             if isinstance(v, dict):
@@ -56,14 +131,12 @@ def update_keys():
 
                 # Handle app type keys
                 if "APP -" in value_part:
-                    # Parse app configuration
                     app_part = value_part.split("APP -", 1)[1].strip()
                     if "->" in app_part:
                         shortcut_part, command_part = app_part.split("->", 1)
                         shortcut = shortcut_part.strip()
                         command = command_part.strip()
                         
-                        # Extract color if present
                         color = None
                         if "[" in command and "]" in command:
                             command, color_part = command.rsplit("[", 1)
@@ -78,13 +151,11 @@ def update_keys():
                         if color:
                             keys[key]["color"] = color
                     else:
-                        # Simple app without command
                         keys[key] = {
                             "type": "app",
                             "shortcut": app_part
                         }
                 else:
-                    # Handle regular keys
                     if "[" in value_part and "]" in value_part:
                         code_part, color_part = value_part.split("[", 1)
                         code = code_part.strip()
@@ -96,18 +167,139 @@ def update_keys():
             except Exception as e:
                 print(f"Skipping invalid line: {line} ({e})")
                 continue
-    if layer_id in config["layers"]:
+    if layer_id in config.get("layers", {}):
         config["layers"][layer_id]["keys"] = keys
+
+def add_preset_layer():
+    """Add a preset layer"""
+    dialog = tk.Toplevel()
+    dialog.title("Add Preset Layer")
+    dialog.geometry("400x300")
+    
+    tk.Label(dialog, text="Select a preset layer:").pack(pady=10)
+    
+    preset_var = tk.StringVar()
+    preset_combo = ttk.Combobox(dialog, textvariable=preset_var, values=list(PRESET_LAYERS.keys()), state="readonly")
+    preset_combo.pack(pady=5)
+    
+    tk.Label(dialog, text="Layer ID (1-8):").pack()
+    layer_id_entry = tk.Entry(dialog)
+    layer_id_entry.pack()
+    
+    def add_preset():
+        try:
+            layer_id = layer_id_entry.get().strip()
+            preset_name = preset_var.get()
+            
+            if not layer_id or not preset_name:
+                messagebox.showerror("Error", "Please fill in all fields!")
+                return
+            
+            if not layer_id.isdigit() or int(layer_id) < 1 or int(layer_id) > 8:
+                messagebox.showerror("Error", "Layer ID must be 1-8!")
+                return
+            
+            # Initialize layers if not exists
+            if "layers" not in config:
+                config["layers"] = {}
+            
+            # Add the preset layer
+            config["layers"][layer_id] = {
+                "name": preset_name,
+                **PRESET_LAYERS[preset_name]
+            }
+            
+            update_layer_list()
+            layer_select.set(layer_id)
+            show_keys()
+            dialog.destroy()
+            messagebox.showinfo("Success", f"Added {preset_name} layer!")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add preset layer: {e}")
+    
+    tk.Button(dialog, text="Add Preset Layer", command=add_preset).pack(pady=10)
+
+def add_apps_layer():
+    """Add a complete apps layer with common applications"""
+    dialog = tk.Toplevel()
+    dialog.title("Add Apps Layer")
+    dialog.geometry("500x400")
+    
+    tk.Label(dialog, text="Layer ID (1-8):").pack()
+    layer_id_entry = tk.Entry(dialog)
+    layer_id_entry.pack()
+    
+    tk.Label(dialog, text="Select apps to include:").pack(pady=10)
+    
+    # Create checkboxes for each app
+    app_vars = {}
+    for app_name in PRESET_APPS.keys():
+        var = tk.BooleanVar(value=True)  # Default to selected
+        app_vars[app_name] = var
+        tk.Checkbutton(dialog, text=app_name, variable=var).pack(anchor=tk.W)
+    
+    def add_apps_layer():
+        try:
+            layer_id = layer_id_entry.get().strip()
+            
+            if not layer_id:
+                messagebox.showerror("Error", "Please enter a layer ID!")
+                return
+            
+            if not layer_id.isdigit() or int(layer_id) < 1 or int(layer_id) > 8:
+                messagebox.showerror("Error", "Layer ID must be 1-8!")
+                return
+            
+            # Initialize layers if not exists
+            if "layers" not in config:
+                config["layers"] = {}
+            
+            # Create apps layer
+            apps_keys = {}
+            key_num = 9
+            for app_name, var in app_vars.items():
+                if var.get():  # If app is selected
+                    apps_keys[str(key_num)] = {
+                        "type": "app",
+                        **PRESET_APPS[app_name],
+                        "color": [255, 128, 0]
+                    }
+                    key_num += 1
+                    if key_num > 15:  # Max 7 apps
+                        break
+            
+            config["layers"][layer_id] = {
+                "name": "Apps",
+                "color": [255, 0, 0],
+                "keys": apps_keys
+            }
+            
+            update_layer_list()
+            layer_select.set(layer_id)
+            show_keys()
+            dialog.destroy()
+            messagebox.showinfo("Success", f"Added Apps layer with {len(apps_keys)} apps!")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add apps layer: {e}")
+    
+    tk.Button(dialog, text="Add Apps Layer", command=add_apps_layer).pack(pady=10)
 
 def add_app_key():
     """Add a new app key with a dialog"""
     dialog = tk.Toplevel()
     dialog.title("Add App Key")
-    dialog.geometry("400x300")
+    dialog.geometry("400x350")
     
-    tk.Label(dialog, text="Key Number:").pack()
+    tk.Label(dialog, text="Key Number (9-15):").pack()
     key_entry = tk.Entry(dialog)
     key_entry.pack()
+    
+    tk.Label(dialog, text="Or select from presets:").pack(pady=5)
+    preset_var = tk.StringVar()
+    preset_combo = ttk.Combobox(dialog, textvariable=preset_var, values=list(PRESET_APPS.keys()), state="readonly")
+    preset_combo.pack(pady=5)
     
     tk.Label(dialog, text="Shortcut (e.g., WIN+R):").pack()
     shortcut_entry = tk.Entry(dialog)
@@ -126,6 +318,16 @@ def add_app_key():
     examples_frame.pack(pady=5)
     tk.Label(examples_frame, text="Examples: red, blue, [255,0,0], 255,0,0", fg="gray").pack()
     
+    def on_preset_select(*args):
+        if preset_var.get() in PRESET_APPS:
+            app_config = PRESET_APPS[preset_var.get()]
+            shortcut_entry.delete(0, tk.END)
+            shortcut_entry.insert(0, app_config["shortcut"])
+            command_entry.delete(0, tk.END)
+            command_entry.insert(0, app_config["command"])
+    
+    preset_combo.bind('<<ComboboxSelected>>', on_preset_select)
+    
     def save_app():
         try:
             key = key_entry.get().strip()
@@ -135,6 +337,10 @@ def add_app_key():
             
             if not key or not shortcut:
                 messagebox.showerror("Error", "Key number and shortcut are required!")
+                return
+            
+            if not key.isdigit() or int(key) < 9 or int(key) > 15:
+                messagebox.showerror("Error", "Key number must be 9-15!")
                 return
             
             app_config = {
@@ -154,7 +360,7 @@ def add_app_key():
             
             # Add to current layer
             layer_id = layer_select.get()
-            if layer_id in config["layers"]:
+            if layer_id in config.get("layers", {}):
                 config["layers"][layer_id]["keys"][key] = app_config
                 show_keys()
                 dialog.destroy()
@@ -214,7 +420,7 @@ def add_layer():
     dialog.title("Add Layer")
     dialog.geometry("350x250")
     
-    tk.Label(dialog, text="Layer ID:").pack()
+    tk.Label(dialog, text="Layer ID (1-8):").pack()
     layer_id_entry = tk.Entry(dialog)
     layer_id_entry.pack()
     
@@ -241,6 +447,14 @@ def add_layer():
                 messagebox.showerror("Error", "Layer ID is required!")
                 return
             
+            if not layer_id.isdigit() or int(layer_id) < 1 or int(layer_id) > 8:
+                messagebox.showerror("Error", "Layer ID must be 1-8!")
+                return
+            
+            # Initialize layers if not exists
+            if "layers" not in config:
+                config["layers"] = {}
+            
             new_layer = {
                 "name": layer_name or f"Layer {layer_id}",
                 "keys": {}
@@ -254,7 +468,7 @@ def add_layer():
                 new_layer["color"] = color
             
             config["layers"][layer_id] = new_layer
-            layer_select['values'] = list(config['layers'].keys())
+            update_layer_list()
             layer_select.set(layer_id)
             show_keys()
             dialog.destroy()
@@ -278,23 +492,39 @@ def save_config():
 
 # GUI setup
 app = tk.Tk()
-app.title("Keybow Configurator - App Launcher Support")
-app.geometry("600x500")
+app.title("Keybow Configurator - Enhanced")
+app.geometry("800x600")
 
 # Top frame for controls
 top_frame = tk.Frame(app)
 top_frame.pack(fill=tk.X, padx=10, pady=5)
 
-tk.Button(top_frame, text="Load Config", command=load_config).pack(side=tk.LEFT, padx=5)
-tk.Button(top_frame, text="Save Config", command=save_config).pack(side=tk.LEFT, padx=5)
-tk.Button(top_frame, text="Add Layer", command=add_layer).pack(side=tk.LEFT, padx=5)
-tk.Button(top_frame, text="Add App Key", command=add_app_key).pack(side=tk.LEFT, padx=5)
+# File operations
+file_frame = tk.LabelFrame(top_frame, text="File Operations")
+file_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+tk.Button(file_frame, text="Load Config", command=load_config).pack(side=tk.LEFT, padx=5)
+tk.Button(file_frame, text="Save Config", command=save_config).pack(side=tk.LEFT, padx=5)
+
+# Layer operations
+layer_frame = tk.LabelFrame(top_frame, text="Layer Operations")
+layer_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+tk.Button(layer_frame, text="Add Layer", command=add_layer).pack(side=tk.LEFT, padx=5)
+tk.Button(layer_frame, text="Add Preset Layer", command=add_preset_layer).pack(side=tk.LEFT, padx=5)
+tk.Button(layer_frame, text="Add Apps Layer", command=add_apps_layer).pack(side=tk.LEFT, padx=5)
+
+# Key operations
+key_frame = tk.LabelFrame(top_frame, text="Key Operations")
+key_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+tk.Button(key_frame, text="Add App Key", command=add_app_key).pack(side=tk.LEFT, padx=5)
 
 # Layer selection
-layer_frame = tk.Frame(app)
-layer_frame.pack(fill=tk.X, padx=10, pady=5)
-tk.Label(layer_frame, text="Layer:").pack(side=tk.LEFT)
-layer_select = ttk.Combobox(layer_frame, state="readonly")
+layer_select_frame = tk.Frame(app)
+layer_select_frame.pack(fill=tk.X, padx=10, pady=5)
+tk.Label(layer_select_frame, text="Layer:").pack(side=tk.LEFT)
+layer_select = ttk.Combobox(layer_select_frame, state="readonly")
 layer_select.pack(side=tk.LEFT, padx=5)
 layer_select.bind('<<ComboboxSelected>>', show_keys)
 
@@ -304,16 +534,17 @@ keys_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
 tk.Label(keys_frame, text="Keys Configuration (Format: Key X: CODE or Key X: APP - SHORTCUT -> COMMAND)").pack()
 
-keys_text = tk.Text(keys_frame, width=70, height=20)
+keys_text = tk.Text(keys_frame, width=80, height=25)
 keys_text.pack(fill=tk.BOTH, expand=True)
 
 # Instructions
 instructions = """
-Instructions:
-- Regular keys: Key X: CODE [R, G, B]
-- App keys: Key X: APP - WIN+R -> notepad [255, 128, 0]
-- Use "Add App Key" button for easy app key creation
-- Use "Add Layer" button to create new layers
+Quick Start Guide:
+1. Use "Add Preset Layer" to quickly add common layer types (Numpad, Media, Gaming, Programming)
+2. Use "Add Apps Layer" to create a complete apps layer with common applications
+3. Use "Add App Key" to add individual app shortcuts
+4. Edit keys directly in the text area or use the buttons above
+5. Layer IDs must be 1-8, Key numbers must be 9-15 for content
 """
 tk.Label(app, text=instructions, justify=tk.LEFT, fg="blue").pack(padx=10, pady=5)
 
