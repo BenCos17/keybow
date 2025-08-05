@@ -14,6 +14,7 @@ config = {}
 # GitHub repository information
 GITHUB_REPO = "BenCos17/keybow"
 GITHUB_API_BASE = "https://api.github.com/repos"
+FIRMWARE_PATH = "keybow%20files/code.py"  # Path to your firmware file in the repository (URL encoded)
 
 # Preset configurations for easy setup
 PRESET_LAYERS = {
@@ -93,8 +94,8 @@ def check_for_updates():
             latest_commit = commit_data['sha'][:8]  # Short commit hash
             commit_date = commit_data['commit']['author']['date'][:10]  # Date only
             
-            # Get the raw content of code.py
-            raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/code.py"
+            # Get the raw content of the firmware file
+            raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{FIRMWARE_PATH}"
             
             # Show update dialog
             update_dialog = tk.Toplevel()
