@@ -4,122 +4,139 @@
       "name": "Numpad",
       "color": [255, 0, 255],
       "keys": {
-        "4": { "code": "KEYPAD_ZERO", "color": [128, 0, 255] },
-        "5": { "code": "KEYPAD_ONE" },
-        "6": { "code": "KEYPAD_FOUR" },
-        "7": { "code": "KEYPAD_SEVEN" },
-        "8": { "code": "DELETE" },
-        "9": { "code": "KEYPAD_TWO" },
-        "10": { "code": "KEYPAD_FIVE" },
-        "11": { "code": "KEYPAD_EIGHT" },
-        "12": { "code": "ENTER" },
-        "13": { "code": "KEYPAD_THREE" },
-        "14": { "code": "KEYPAD_SIX" },
-        "15": { "code": "KEYPAD_NINE" }
+        "9": { "code": "KEYPAD_ZERO", "color": [128, 0, 255] },
+        "10": { "code": "KEYPAD_ONE" },
+        "11": { "code": "KEYPAD_TWO" },
+        "12": { "code": "KEYPAD_THREE" },
+        "13": { "code": "KEYPAD_FOUR" },
+        "14": { "code": "KEYPAD_FIVE" },
+        "15": { "code": "KEYPAD_SIX" }
       }
     },
     "2": {
       "name": "Strings",
       "color": [0, 255, 255],
       "keys": {
-        "5": { "code": "liquor " },
-        "6": { "code": "with " },
-        "7": { "code": "pack " },
-        "9": { "code": "jugs " },
-        "10": { "code": "five " },
-        "11": { "code": "my " },
-        "14": { "code": "dozen " },
-        "15": { "code": "box " }
+        "9": { "code": "liquor " },
+        "10": { "code": "with " },
+        "11": { "code": "pack " },
+        "12": { "code": "jugs " },
+        "13": { "code": "five " },
+        "14": { "code": "my " },
+        "15": { "code": "dozen " }
       }
     },
     "3": {
       "name": "Media",
       "color": [255, 255, 0],
       "keys": {
-        "6": { "code": "VOLUME_DECREMENT" },
-        "7": { "code": "SCAN_PREVIOUS_TRACK" },
-        "10": { "code": "MUTE" },
-        "11": { "code": "PLAY_PAUSE" },
-        "14": { "code": "VOLUME_INCREMENT" },
-        "15": { "code": "SCAN_NEXT_TRACK" }
+        "9": { "code": "VOLUME_DECREMENT" },
+        "10": { "code": "VOLUME_INCREMENT" },
+        "11": { "code": "MUTE" },
+        "12": { "code": "PLAY_PAUSE" },
+        "13": { "code": "SCAN_PREVIOUS_TRACK" },
+        "14": { "code": "SCAN_NEXT_TRACK" },
+        "15": { "code": "STOP" }
       }
     },
     "4": {
       "name": "Apps",
       "color": [255, 0, 0],
       "keys": {
-        "4": { 
+        "9": { 
           "type": "app", 
           "shortcut": "WIN+R", 
           "command": "notepad", 
           "color": [255, 128, 0] 
         },
-        "5": { 
+        "10": { 
           "type": "app", 
           "shortcut": "WIN+R", 
           "command": "calc", 
           "color": [255, 128, 0] 
         },
-        "6": { 
+        "11": { 
           "type": "app", 
           "shortcut": "WIN+R", 
           "command": "mspaint", 
           "color": [255, 128, 0] 
         },
-        "7": { 
-          "type": "app", 
-          "shortcut": "WIN+R", 
-          "command": "wordpad", 
-          "color": [255, 128, 0] 
-        },
-        "8": { 
+        "12": { 
           "type": "app", 
           "shortcut": "WIN+R", 
           "command": "explorer", 
           "color": [255, 128, 0] 
         },
-        "9": { 
+        "13": { 
           "type": "app", 
           "shortcut": "WIN+R", 
           "command": "cmd", 
           "color": [255, 128, 0] 
         },
-        "10": { 
-          "type": "app", 
-          "shortcut": "WIN+R", 
-          "command": "powershell", 
-          "color": [255, 128, 0] 
-        },
-        "11": { 
+        "14": { 
           "type": "app", 
           "shortcut": "WIN+R", 
           "command": "control", 
           "color": [255, 128, 0] 
         },
-        "12": { 
-          "type": "app", 
-          "shortcut": "WIN+R", 
-          "command": "ms-settings:", 
-          "color": [255, 128, 0] 
-        },
-        "13": { 
+        "15": { 
           "type": "app", 
           "shortcut": "WIN+R", 
           "command": "taskmgr", 
           "color": [255, 128, 0] 
-        },
-        "14": { 
-          "type": "app", 
-          "shortcut": "WIN+R", 
-          "command": "devmgmt.msc", 
-          "color": [255, 128, 0] 
-        },
-        "15": { 
-          "type": "app", 
-          "shortcut": "WIN+R", 
-          "command": "services.msc", 
-          "color": [255, 128, 0] 
         }
+      }
+    },
+    "5": {
+      "name": "Gaming",
+      "color": [0, 255, 0],
+      "keys": {
+        "9": { "code": "W" },
+        "10": { "code": "A" },
+        "11": { "code": "S" },
+        "12": { "code": "D" },
+        "13": { "code": "SPACE" },
+        "14": { "code": "SHIFT" },
+        "15": { "code": "CONTROL" }
+      }
+    },
+    "6": {
+      "name": "Programming",
+      "color": [128, 0, 255],
+      "keys": {
+        "9": { "code": "CTRL+C" },
+        "10": { "code": "CTRL+V" },
+        "11": { "code": "CTRL+X" },
+        "12": { "code": "CTRL+Z" },
+        "13": { "code": "CTRL+A" },
+        "14": { "code": "CTRL+S" },
+        "15": { "code": "CTRL+F" }
+      }
+    },
+    "7": {
+      "name": "System",
+      "color": [255, 128, 0],
+      "keys": {
+        "9": { "code": "ALT+TAB" },
+        "10": { "code": "ALT+F4" },
+        "11": { "code": "CTRL+ALT+DELETE" },
+        "12": { "code": "WINDOWS" },
+        "13": { "code": "PRINT_SCREEN" },
+        "14": { "code": "SCROLL_LOCK" },
+        "15": { "code": "PAUSE" }
+      }
+    },
+    "8": {
+      "name": "Custom",
+      "color": [255, 255, 255],
+      "keys": {
+        "9": { "code": "F1" },
+        "10": { "code": "F2" },
+        "11": { "code": "F3" },
+        "12": { "code": "F4" },
+        "13": { "code": "F5" },
+        "14": { "code": "F6" },
+        "15": { "code": "F7" }
       }
     }
   }

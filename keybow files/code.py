@@ -27,7 +27,9 @@ except Exception as e:
 
 # Key setup
 modifier = keys[0]
-selectors = {1: keys[1], 2: keys[2], 3: keys[3]}
+# Support up to 8 layers with more keys per layer
+# Use keys 1-8 as layer selectors, keys 9-15 for layer content
+selectors = {i: keys[i] for i in range(1, 9)}
 current_layer = 1
 fired = False
 short_debounce, long_debounce = 0.03, 0.15
@@ -87,20 +89,30 @@ def launch_app(app_config):
 
 # Set LEDs for the selected layer
 def set_layer_leds(layer):
-    layer_conf = config["layers"].get(str(layer), {})
-    default_color = tuple(layer_conf.get("color", [0, 0, 255]))
-    keys_to_set = layer_conf.get("keys", {})
+    try:
+        layer_conf = config["layers"].get(str(layer), {})
+        default_color = tuple(layer_conf.get("color", [0, 0, 255]))
+        keys_to_set = layer_conf.get("keys", {})
 
-    # Reset all LEDs
-    for i in range(4, 16):
-        keys[i].set_led(0, 0, 0)
+        # Reset all LEDs for layer content keys (9-15)
+        for i in range(9, 16):
+            keys[i].set_led(0, 0, 0)
 
-    for k, v in keys_to_set.items():
-        k_int = int(k)
-        if isinstance(v, dict) and "color" in v:
-            keys[k_int].set_led(*v["color"])
-        else:
-            keys[k_int].set_led(*default_color)
+        for k, v in keys_to_set.items():
+            try:
+                k_int = int(k)
+                if isinstance(v, dict) and "color" in v:
+                    keys[k_int].set_led(*v["color"])
+                else:
+                    keys[k_int].set_led(*default_color)
+            except Exception as e:
+                print(f"Error setting LED for key {k}: {e}")
+                continue
+    except Exception as e:
+        print(f"Error in set_layer_leds for layer {layer}: {e}")
+        # Turn off all content LEDs if there's an error
+        for i in range(9, 16):
+            keys[i].set_led(0, 0, 0)
 
 # Initialize LEDs for the starting layer
 set_layer_leds(current_layer)
@@ -113,48 +125,70 @@ while True:
     if modifier.held:
         keys[0].led_off()  # Turn off modifier LED
         for i in selectors:
-            color = config["layers"].get(str(i), {}).get("color", [0, 0, 0])
-            keys[i].set_led(*color)
-            if selectors[i].pressed:
-                current_layer = i
-                set_layer_leds(i)  # Update LEDs for the new layer
-        
-        # Show layer 4 selector and check for activation
-        layer4_color = config["layers"].get("4", {}).get("color", [255, 0, 0])
-        keys[4].set_led(*layer4_color)
-        if keys[4].pressed:
-            current_layer = 4
-            set_layer_leds(4)
+            try:
+                # Only show layer selector if the layer exists in config
+                if str(i) in config["layers"]:
+                    color = config["layers"][str(i)].get("color", [0, 0, 0])
+                    keys[i].set_led(*color)
+                    if selectors[i].pressed:
+                        current_layer = i
+                        set_layer_leds(i)  # Update LEDs for the new layer
+                else:
+                    # Turn off LED for non-existent layers
+                    keys[i].led_off()
+            except Exception as e:
+                # If there's an error, turn off the LED and continue
+                keys[i].led_off()
+                print(f"Error with layer {i}: {e}")
     else:
         for i in selectors:
-            keys[i].led_off()  # Turn off layer selector LEDs
-        keys[4].led_off()  # Turn off layer 4 selector LED
+            if i == current_layer:
+                # Show current layer with a dim indicator
+                try:
+                    if str(i) in config["layers"]:
+                        color = config["layers"][str(i)].get("color", [0, 0, 0])
+                        # Dim the color to 1/4 brightness
+                        dim_color = [c // 4 for c in color]
+                        keys[i].set_led(*dim_color)
+                    else:
+                        keys[i].led_off()
+                except:
+                    keys[i].led_off()
+            else:
+                keys[i].led_off()  # Turn off other layer selector LEDs
         keys[0].set_led(0, 255, 0)  # Green LED for modifier when not held
 
     # Handle key presses for the current layer
-    keys_conf = config["layers"].get(str(current_layer), {}).get("keys", {})
-    for k, v in keys_conf.items():
-        k_int = int(k)
-        if keys[k_int].pressed and not fired:
-            fired = True
-            
-            # Check if this is an app launch key
-            if isinstance(v, dict) and "type" in v and v["type"] == "app":
-                debounce = long_debounce
-                launch_app(v)
-            else:
-                # Handle regular keys
-                key_val = v["code"] if isinstance(v, dict) and "code" in v else v
-                parsed = parse_key(key_val)
-                if isinstance(parsed, int):
-                    debounce = short_debounce
-                    keyboard.send(parsed)
-                elif isinstance(parsed, ConsumerControlCode):
-                    debounce = short_debounce
-                    consumer.send(parsed)
-                else:
-                    debounce = long_debounce
-                    layout.write(parsed)
+    try:
+        keys_conf = config["layers"].get(str(current_layer), {}).get("keys", {})
+        for k, v in keys_conf.items():
+            try:
+                k_int = int(k)
+                if keys[k_int].pressed and not fired:
+                    fired = True
+                    
+                    # Check if this is an app launch key
+                    if isinstance(v, dict) and "type" in v and v["type"] == "app":
+                        debounce = long_debounce
+                        launch_app(v)
+                    else:
+                        # Handle regular keys
+                        key_val = v["code"] if isinstance(v, dict) and "code" in v else v
+                        parsed = parse_key(key_val)
+                        if isinstance(parsed, int):
+                            debounce = short_debounce
+                            keyboard.send(parsed)
+                        elif isinstance(parsed, ConsumerControlCode):
+                            debounce = short_debounce
+                            consumer.send(parsed)
+                        else:
+                            debounce = long_debounce
+                            layout.write(parsed)
+            except Exception as e:
+                print(f"Error handling key {k}: {e}")
+                continue
+    except Exception as e:
+        print(f"Error in key press handling for layer {current_layer}: {e}")
 
     # Reset the "fired" flag after the debounce time
     if fired and time.monotonic() - keybow.time_of_last_press > debounce:

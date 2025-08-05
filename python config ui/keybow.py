@@ -117,9 +117,14 @@ def add_app_key():
     command_entry = tk.Entry(dialog)
     command_entry.pack()
     
-    tk.Label(dialog, text="Color [R, G, B] (optional):").pack()
+    tk.Label(dialog, text="Color (e.g., [255,0,0] or 'red') (optional):").pack()
     color_entry = tk.Entry(dialog)
     color_entry.pack()
+    
+    # Color examples
+    examples_frame = tk.Frame(dialog)
+    examples_frame.pack(pady=5)
+    tk.Label(examples_frame, text="Examples: red, blue, [255,0,0], 255,0,0", fg="gray").pack()
     
     def save_app():
         try:
@@ -141,12 +146,11 @@ def add_app_key():
                 app_config["command"] = command
             
             if color_text:
-                try:
-                    color = json.loads(color_text)
-                    app_config["color"] = color
-                except:
-                    messagebox.showerror("Error", "Invalid color format! Use [R, G, B]")
+                color = parse_color(color_text)
+                if color is None:
+                    messagebox.showerror("Error", "Invalid color format! Use [R,G,B], 'red', or R,G,B")
                     return
+                app_config["color"] = color
             
             # Add to current layer
             layer_id = layer_select.get()
@@ -162,11 +166,53 @@ def add_app_key():
     
     tk.Button(dialog, text="Add App Key", command=save_app).pack(pady=10)
 
+def parse_color(color_text):
+    """Parse color from text input, supporting both RGB format and color names"""
+    color_text = color_text.strip().lower()
+    
+    # Common color names
+    color_names = {
+        'red': [255, 0, 0],
+        'green': [0, 255, 0],
+        'blue': [0, 0, 255],
+        'yellow': [255, 255, 0],
+        'cyan': [0, 255, 255],
+        'magenta': [255, 0, 255],
+        'white': [255, 255, 255],
+        'black': [0, 0, 0],
+        'orange': [255, 165, 0],
+        'purple': [128, 0, 128],
+        'pink': [255, 192, 203],
+        'brown': [165, 42, 42],
+        'gray': [128, 128, 128],
+        'grey': [128, 128, 128]
+    }
+    
+    # Try color name first
+    if color_text in color_names:
+        return color_names[color_text]
+    
+    # Try JSON format [R, G, B]
+    try:
+        return json.loads(color_text)
+    except:
+        pass
+    
+    # Try comma-separated format
+    try:
+        parts = color_text.split(',')
+        if len(parts) == 3:
+            return [int(parts[0].strip()), int(parts[1].strip()), int(parts[2].strip())]
+    except:
+        pass
+    
+    return None
+
 def add_layer():
     """Add a new layer"""
     dialog = tk.Toplevel()
     dialog.title("Add Layer")
-    dialog.geometry("300x200")
+    dialog.geometry("350x250")
     
     tk.Label(dialog, text="Layer ID:").pack()
     layer_id_entry = tk.Entry(dialog)
@@ -176,9 +222,14 @@ def add_layer():
     layer_name_entry = tk.Entry(dialog)
     layer_name_entry.pack()
     
-    tk.Label(dialog, text="Default Color [R, G, B]:").pack()
+    tk.Label(dialog, text="Default Color (e.g., [255,0,0] or 'red'):").pack()
     color_entry = tk.Entry(dialog)
     color_entry.pack()
+    
+    # Color examples
+    examples_frame = tk.Frame(dialog)
+    examples_frame.pack(pady=5)
+    tk.Label(examples_frame, text="Examples: red, blue, [255,0,0], 255,0,0", fg="gray").pack()
     
     def save_layer():
         try:
@@ -196,12 +247,11 @@ def add_layer():
             }
             
             if color_text:
-                try:
-                    color = json.loads(color_text)
-                    new_layer["color"] = color
-                except:
-                    messagebox.showerror("Error", "Invalid color format! Use [R, G, B]")
+                color = parse_color(color_text)
+                if color is None:
+                    messagebox.showerror("Error", "Invalid color format! Use [R,G,B], 'red', or R,G,B")
                     return
+                new_layer["color"] = color
             
             config["layers"][layer_id] = new_layer
             layer_select['values'] = list(config['layers'].keys())
