@@ -175,7 +175,7 @@ def download_and_install_firmware(raw_url, commit_hash):
             messagebox.showinfo("Success", f"Firmware updated to commit {commit_hash}!\nPlease restart your Keybow2040.")
         else:
             # If we can't find the Keybow path, save to a known location
-            save_path = os.path.join(os.path.expanduser("~"), "Downloads", f"keybow_firmware_{commit_hash}.py")
+            save_path = os.path.join(os.path.expanduser("~"), "Downloads", "code.py")
             shutil.copy2(tmp_file_path, save_path)
             messagebox.showinfo("Success", f"Firmware downloaded to: {save_path}\nPlease copy this file to your Keybow2040 manually.")
         
@@ -205,6 +205,15 @@ def get_keybow_path():
                 return matches[0]
         elif os.path.exists(path_pattern):
             return path_pattern
+    
+    # If not found, ask user to select manually
+    result = messagebox.askyesno("Keybow2040 Not Found", 
+                                "Could not automatically find your Keybow2040.\n\n"
+                                "Would you like to select the drive manually?")
+    if result:
+        path = filedialog.askdirectory(title="Select Keybow2040 drive/folder")
+        if path and os.path.exists(path):
+            return path
     
     return None
 
