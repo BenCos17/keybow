@@ -793,37 +793,173 @@ def add_apps_layer():
     
     tk.Button(dialog, text="Add Apps Layer", command=add_apps_layer).pack(pady=10)
 
+def find_installed_apps():
+    """Find installed applications on the system"""
+    import subprocess
+    import platform
+    
+    found_apps = {}
+    
+    if platform.system() == "Windows":
+        # Common Windows app locations
+        app_locations = [
+            r"C:\Program Files",
+            r"C:\Program Files (x86)",
+            r"C:\Users\%USERNAME%\AppData\Local\Programs",
+            r"C:\Users\%USERNAME%\AppData\Roaming\Microsoft\Windows\Start Menu\Programs"
+        ]
+        
+        # Common Windows apps
+        common_apps = {
+            "chrome.exe": "Google Chrome",
+            "msedge.exe": "Microsoft Edge",
+            "firefox.exe": "Mozilla Firefox",
+            "notepad.exe": "Notepad",
+            "calc.exe": "Calculator",
+            "mspaint.exe": "Paint",
+            "wordpad.exe": "WordPad",
+            "explorer.exe": "File Explorer",
+            "cmd.exe": "Command Prompt",
+            "powershell.exe": "PowerShell",
+            "control.exe": "Control Panel",
+            "taskmgr.exe": "Task Manager",
+            "devmgmt.msc": "Device Manager",
+            "services.msc": "Services",
+            "ms-settings:": "Windows Settings",
+            "winword.exe": "Microsoft Word",
+            "excel.exe": "Microsoft Excel",
+            "powerpnt.exe": "Microsoft PowerPoint",
+            "outlook.exe": "Microsoft Outlook",
+            "teams.exe": "Microsoft Teams",
+            "discord.exe": "Discord",
+            "spotify.exe": "Spotify",
+            "vlc.exe": "VLC Media Player",
+            "obs64.exe": "OBS Studio",
+            "code.exe": "Visual Studio Code",
+            "notepad++.exe": "Notepad++",
+            "sublime_text.exe": "Sublime Text",
+            "atom.exe": "Atom Editor",
+            "git-bash.exe": "Git Bash",
+            "putty.exe": "PuTTY",
+            "winrar.exe": "WinRAR",
+            "7zFM.exe": "7-Zip",
+            "acrobat.exe": "Adobe Acrobat",
+            "photoshop.exe": "Adobe Photoshop",
+            "illustrator.exe": "Adobe Illustrator",
+            "premiere.exe": "Adobe Premiere",
+            "afterfx.exe": "Adobe After Effects",
+            "blender.exe": "Blender",
+            "unity.exe": "Unity",
+            "unreal.exe": "Unreal Engine",
+            "steam.exe": "Steam",
+            "epicgameslauncher.exe": "Epic Games Launcher",
+            "battle.net.exe": "Battle.net",
+            "origin.exe": "Origin",
+            "uplay.exe": "Ubisoft Connect"
+        }
+        
+        # Try to find apps using where command
+        for app_name, display_name in common_apps.items():
+            try:
+                result = subprocess.run(['where', app_name], capture_output=True, text=True, timeout=5)
+                if result.returncode == 0:
+                    found_apps[display_name] = app_name
+            except:
+                continue
+    
+    return found_apps
+
+def browse_for_app():
+    """Let user browse for an application file"""
+    file_types = [
+        ("Executable files", "*.exe"),
+        ("All files", "*.*")
+    ]
+    
+    if platform.system() == "Windows":
+        file_types = [
+            ("Executable files", "*.exe"),
+            ("All files", "*.*")
+        ]
+    else:
+        file_types = [
+            ("All files", "*.*")
+        ]
+    
+    filename = filedialog.askopenfilename(
+        title="Select Application",
+        filetypes=file_types,
+        initialdir="/"
+    )
+    
+    if filename:
+        # Get just the filename without path
+        app_name = os.path.basename(filename)
+        return app_name, filename
+    return None, None
+
 def add_app_key():
     """Add a new app key with a dialog"""
     dialog = tk.Toplevel()
     dialog.title("Add App Key")
-    dialog.geometry("400x350")
+    dialog.geometry("500x500")
     
+    # Key number
     tk.Label(dialog, text="Key Number (9-15):").pack()
     key_entry = tk.Entry(dialog)
     key_entry.pack()
     
-    tk.Label(dialog, text="Or select from presets:").pack(pady=5)
+    # App selection frame
+    app_frame = tk.LabelFrame(dialog, text="App Selection")
+    app_frame.pack(fill=tk.X, padx=10, pady=5)
+    
+    # Preset apps
+    tk.Label(app_frame, text="Preset Apps:").pack(anchor=tk.W)
     preset_var = tk.StringVar()
-    preset_combo = ttk.Combobox(dialog, textvariable=preset_var, values=list(PRESET_APPS.keys()), state="readonly")
-    preset_combo.pack(pady=5)
+    preset_combo = ttk.Combobox(app_frame, textvariable=preset_var, values=list(PRESET_APPS.keys()), state="readonly")
+    preset_combo.pack(fill=tk.X, pady=2)
     
-    tk.Label(dialog, text="Shortcut (e.g., WIN+R):").pack()
-    shortcut_entry = tk.Entry(dialog)
-    shortcut_entry.pack()
+    # Installed apps
+    tk.Label(app_frame, text="Installed Apps:").pack(anchor=tk.W, pady=(10,0))
+    installed_var = tk.StringVar()
+    installed_combo = ttk.Combobox(app_frame, textvariable=installed_var, state="readonly")
+    installed_combo.pack(fill=tk.X, pady=2)
     
-    tk.Label(dialog, text="Command (e.g., notepad):").pack()
-    command_entry = tk.Entry(dialog)
-    command_entry.pack()
+    # Browse button
+    tk.Button(app_frame, text="Browse for App...", command=lambda: browse_and_fill()).pack(pady=5)
     
-    tk.Label(dialog, text="Color (e.g., [255,0,0] or 'red') (optional):").pack()
-    color_entry = tk.Entry(dialog)
-    color_entry.pack()
+    # App details frame
+    details_frame = tk.LabelFrame(dialog, text="App Details")
+    details_frame.pack(fill=tk.X, padx=10, pady=5)
+    
+    tk.Label(details_frame, text="Shortcut (e.g., WIN+R):").pack(anchor=tk.W)
+    shortcut_entry = tk.Entry(details_frame)
+    shortcut_entry.pack(fill=tk.X, pady=2)
+    
+    tk.Label(details_frame, text="Command:").pack(anchor=tk.W)
+    command_entry = tk.Entry(details_frame)
+    command_entry.pack(fill=tk.X, pady=2)
+    
+    tk.Label(details_frame, text="Color (e.g., [255,0,0] or 'red') (optional):").pack(anchor=tk.W)
+    color_entry = tk.Entry(details_frame)
+    color_entry.pack(fill=tk.X, pady=2)
     
     # Color examples
-    examples_frame = tk.Frame(dialog)
+    examples_frame = tk.Frame(details_frame)
     examples_frame.pack(pady=5)
     tk.Label(examples_frame, text="Examples: red, blue, [255,0,0], 255,0,0", fg="gray").pack()
+    
+    def load_installed_apps():
+        """Load installed apps into the combo box"""
+        try:
+            found_apps = find_installed_apps()
+            if found_apps:
+                installed_combo['values'] = list(found_apps.keys())
+                installed_combo.set("Select an installed app...")
+            else:
+                installed_combo['values'] = ["No apps found"]
+        except Exception as e:
+            installed_combo['values'] = [f"Error: {e}"]
     
     def on_preset_select(*args):
         if preset_var.get() in PRESET_APPS:
@@ -833,7 +969,30 @@ def add_app_key():
             command_entry.delete(0, tk.END)
             command_entry.insert(0, app_config["command"])
     
+    def on_installed_select(*args):
+        if installed_var.get() and installed_var.get() != "Select an installed app..." and installed_var.get() != "No apps found":
+            found_apps = find_installed_apps()
+            if installed_var.get() in found_apps:
+                app_name = found_apps[installed_var.get()]
+                shortcut_entry.delete(0, tk.END)
+                shortcut_entry.insert(0, "WIN+R")
+                command_entry.delete(0, tk.END)
+                command_entry.insert(0, app_name)
+    
+    def browse_and_fill():
+        app_name, full_path = browse_for_app()
+        if app_name:
+            shortcut_entry.delete(0, tk.END)
+            shortcut_entry.insert(0, "WIN+R")
+            command_entry.delete(0, tk.END)
+            command_entry.insert(0, app_name)
+    
+    # Bind events
     preset_combo.bind('<<ComboboxSelected>>', on_preset_select)
+    installed_combo.bind('<<ComboboxSelected>>', on_installed_select)
+    
+    # Load installed apps
+    load_installed_apps()
     
     def save_app():
         try:
