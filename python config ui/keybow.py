@@ -94,13 +94,21 @@ PRESET_APPS = {
 }
 
 def create_key_map():
-    """Create a visual key map showing the Keybow2040 layout"""
+    """Create a visual key map showing the Keybow2040 layout with actual functions"""
     map_window = tk.Toplevel()
     map_window.title("Keybow2040 Key Map")
-    map_window.geometry("400x500")
+    map_window.geometry("800x700")
     
     # Title
-    tk.Label(map_window, text="Keybow2040 Layout", font=("Arial", 16, "bold")).pack(pady=10)
+    tk.Label(map_window, text="Keybow2040 Layout with Functions", font=("Arial", 16, "bold")).pack(pady=10)
+    
+    # Layer selection
+    layer_frame = tk.Frame(map_window)
+    layer_frame.pack(pady=5)
+    tk.Label(layer_frame, text="Select Layer:").pack(side=tk.LEFT)
+    layer_var = tk.StringVar(value="1")
+    layer_combo = ttk.Combobox(layer_frame, textvariable=layer_var, values=list(range(1, 9)), state="readonly", width=5)
+    layer_combo.pack(side=tk.LEFT, padx=5)
     
     # Create the 4x4 grid
     grid_frame = tk.Frame(map_window)
@@ -110,18 +118,78 @@ def create_key_map():
     for row in range(4):
         for col in range(4):
             key_num = KEYBOW_LAYOUT[row][col]
-            btn = tk.Button(grid_frame, text=str(key_num), width=8, height=3, 
-                          font=("Arial", 12, "bold"))
+            btn = tk.Button(grid_frame, text=str(key_num), width=12, height=4, 
+                          font=("Arial", 10, "bold"))
             btn.grid(row=row, column=col, padx=2, pady=2)
             key_buttons[key_num] = btn
+    
+    def update_key_functions():
+        """Update the key map to show actual functions"""
+        try:
+            layer_id = layer_var.get()
+            if not layer_id or layer_id not in config.get("layers", {}):
+                # Show default layout
+                for key_num, btn in key_buttons.items():
+                    if key_num == 0:
+                        btn.config(bg="lightgreen", text="0\nModifier\n(Hold to\nswitch layers)")
+                    elif key_num <= 8:
+                        btn.config(bg="lightblue", text=f"{key_num}\nLayer\nSelector")
+                    else:
+                        btn.config(bg="lightgray", text=f"{key_num}\nContent\nKey")
+                return
             
-            # Color code the keys
-            if key_num == 0:
-                btn.config(bg="lightgreen", text="0\nModifier")
-            elif key_num <= 8:
-                btn.config(bg="lightblue", text=f"{key_num}\nLayer\nSelector")
-            else:
-                btn.config(bg="lightgray", text=f"{key_num}\nContent\nKey")
+            layer_data = config["layers"][layer_id]
+            layer_name = layer_data.get("name", f"Layer {layer_id}")
+            layer_color = layer_data.get("color", [0, 0, 0])
+            keys = layer_data.get("keys", {})
+            
+            # Update title to show current layer
+            map_window.title(f"Keybow2040 Key Map - {layer_name}")
+            
+            # Update all keys
+            for key_num, btn in key_buttons.items():
+                if key_num == 0:
+                    btn.config(bg="lightgreen", text="0\nModifier\n(Hold to\nswitch layers)")
+                elif key_num <= 8:
+                    # Layer selector
+                    if str(key_num) in config.get("layers", {}):
+                        selector_name = config["layers"][str(key_num)].get("name", f"Layer {key_num}")
+                        btn.config(bg="lightblue", text=f"{key_num}\n{selector_name}")
+                    else:
+                        btn.config(bg="lightgray", text=f"{key_num}\nNot\nConfigured")
+                else:
+                    # Content key
+                    if str(key_num) in keys:
+                        key_data = keys[str(key_num)]
+                        if isinstance(key_data, dict):
+                            key_type = key_data.get("type", "key")
+                            if key_type == "app":
+                                command = key_data.get("command", "")
+                                # Truncate long commands
+                                if len(command) > 12:
+                                    command = command[:9] + "..."
+                                btn.config(bg="orange", text=f"{key_num}\nAPP\n{command}")
+                            else:
+                                code = key_data.get("code", "")
+                                # Truncate long codes
+                                if len(code) > 12:
+                                    code = code[:9] + "..."
+                                btn.config(bg="lightyellow", text=f"{key_num}\n{code}")
+                        else:
+                            # Simple string
+                            if len(str(key_data)) > 12:
+                                display_text = str(key_data)[:9] + "..."
+                            else:
+                                display_text = str(key_data)
+                            btn.config(bg="lightyellow", text=f"{key_num}\n{display_text}")
+                    else:
+                        btn.config(bg="lightgray", text=f"{key_num}\nNot\nConfigured")
+        
+        except Exception as e:
+            print(f"Error updating key map: {e}")
+    
+    # Bind layer selection to update function
+    layer_combo.bind('<<ComboboxSelected>>', lambda e: update_key_functions())
     
     # Legend
     legend_frame = tk.Frame(map_window)
@@ -130,26 +198,33 @@ def create_key_map():
     tk.Label(legend_frame, text="Legend:", font=("Arial", 12, "bold")).pack()
     
     legend_items = [
-        ("Key 0", "Modifier (Green) - Hold to switch layers"),
-        ("Keys 1-8", "Layer Selectors (Blue) - Choose which layer to use"),
-        ("Keys 9-15", "Content Keys (Gray) - Actual functions for each layer")
+        ("Green", "Modifier key - Hold to switch layers"),
+        ("Blue", "Layer selectors - Choose which layer to use"),
+        ("Orange", "App launchers - Launch applications"),
+        ("Yellow", "Regular keys - Standard keyboard functions"),
+        ("Gray", "Not configured - No function assigned")
     ]
     
-    for key, desc in legend_items:
+    for color, desc in legend_items:
         item_frame = tk.Frame(legend_frame)
         item_frame.pack(anchor=tk.W, pady=2)
-        tk.Label(item_frame, text=key, font=("Arial", 10, "bold"), width=10).pack(side=tk.LEFT)
+        color_label = tk.Label(item_frame, text="■", fg=color, font=("Arial", 12, "bold"), width=2)
+        color_label.pack(side=tk.LEFT)
         tk.Label(item_frame, text=desc, font=("Arial", 9)).pack(side=tk.LEFT)
     
     # Instructions
     instructions = """
 How to use:
-1. Hold Key 0 (modifier) to enter layer selection mode
-2. Press Keys 1-8 to select a layer
-3. Release both keys to activate the layer
-4. Use Keys 9-15 for the layer's functions
+1. Select a layer from the dropdown to see its functions
+2. Hold Key 0 (modifier) to enter layer selection mode
+3. Press Keys 1-8 to select a layer
+4. Release both keys to activate the layer
+5. Use Keys 9-15 for the layer's functions
     """
     tk.Label(map_window, text=instructions, justify=tk.LEFT, fg="blue").pack(pady=10)
+    
+    # Initial update
+    update_key_functions()
 
 def create_layer_indicator():
     """Create a visual indicator showing current layer and available layers"""
