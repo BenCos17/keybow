@@ -17,12 +17,12 @@ GITHUB_REPO = "BenCos17/keybow"
 GITHUB_API_BASE = "https://api.github.com/repos"
 FIRMWARE_PATH = "keybow%20files/code.py"  # Path to your firmware file in the repository (URL encoded)
 
-# Keybow2040 layout - 4x4 grid
+# Keybow2040 layout - 4x4 grid (modifier key 0 in bottom left)
 KEYBOW_LAYOUT = [
-    [0,  1,  2,  3],
-    [4,  5,  6,  7],
+    [12, 13, 14, 15],
     [8,  9,  10, 11],
-    [12, 13, 14, 15]
+    [4,  5,  6,  7],
+    [0,  1,  2,  3]
 ]
 
 # Preset configurations for easy setup
