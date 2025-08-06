@@ -155,13 +155,21 @@ def create_layer_indicator():
     """Create a visual indicator showing current layer and available layers"""
     indicator_window = tk.Toplevel()
     indicator_window.title("Current Layer Status")
-    indicator_window.geometry("500x400")
+    indicator_window.geometry("800x600")
     
     # Title
-    tk.Label(indicator_window, text="Layer Status", font=("Arial", 16, "bold")).pack(pady=10)
+    tk.Label(indicator_window, text="Layer Status & Key Functions", font=("Arial", 16, "bold")).pack(pady=10)
+    
+    # Main content frame
+    main_frame = tk.Frame(indicator_window)
+    main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+    
+    # Left side - Layer selection
+    left_frame = tk.Frame(main_frame)
+    left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
     
     # Current layer display
-    current_frame = tk.Frame(indicator_window)
+    current_frame = tk.Frame(left_frame)
     current_frame.pack(pady=10)
     tk.Label(current_frame, text="Current Layer:", font=("Arial", 12, "bold")).pack()
     
@@ -170,7 +178,7 @@ def create_layer_indicator():
     current_layer_display.pack()
     
     # Available layers
-    layers_frame = tk.Frame(indicator_window)
+    layers_frame = tk.Frame(left_frame)
     layers_frame.pack(pady=10)
     tk.Label(layers_frame, text="Available Layers:", font=("Arial", 12, "bold")).pack()
     
@@ -178,21 +186,90 @@ def create_layer_indicator():
     layer_buttons = {}
     for layer_id in range(1, 9):
         btn = tk.Button(layers_frame, text=f"Layer {layer_id}", width=10, height=2)
-        btn.pack(side=tk.LEFT, padx=5, pady=5)
+        btn.pack(pady=2)
         layer_buttons[layer_id] = btn
+    
+    # Right side - Key functions display
+    right_frame = tk.Frame(main_frame)
+    right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+    
+    tk.Label(right_frame, text="Key Functions:", font=("Arial", 12, "bold")).pack()
+    
+    # Create key function display
+    key_functions_text = tk.Text(right_frame, width=50, height=20, font=("Consolas", 10))
+    key_functions_text.pack(fill=tk.BOTH, expand=True)
     
     def update_layer_display(layer_id):
         """Update the current layer display"""
         if current_layer_display:
             if layer_id in config.get("layers", {}):
                 layer_name = config["layers"][layer_id].get("name", f"Layer {layer_id}")
+                layer_color = config["layers"][layer_id].get("color", [0, 0, 0])
                 current_layer_display.config(text=f"{layer_id}: {layer_name}", fg="green")
+                
+                # Update layer button colors
+                for lid, btn in layer_buttons.items():
+                    if lid == layer_id:
+                        btn.config(bg="lightgreen")
+                    elif lid in config.get("layers", {}):
+                        btn.config(bg="lightblue")
+                    else:
+                        btn.config(bg="lightgray")
             else:
                 current_layer_display.config(text=f"{layer_id}: Not configured", fg="orange")
+    
+    def update_key_functions(layer_id):
+        """Update the key functions display"""
+        key_functions_text.delete("1.0", tk.END)
+        
+        if layer_id not in config.get("layers", {}):
+            key_functions_text.insert(tk.END, "Layer not configured\n")
+            return
+        
+        layer_data = config["layers"][layer_id]
+        layer_name = layer_data.get("name", f"Layer {layer_id}")
+        layer_color = layer_data.get("color", [0, 0, 0])
+        
+        # Header
+        key_functions_text.insert(tk.END, f"Layer {layer_id}: {layer_name}\n")
+        key_functions_text.insert(tk.END, f"Color: {layer_color}\n")
+        key_functions_text.insert(tk.END, "=" * 50 + "\n\n")
+        
+        # Key functions
+        keys = layer_data.get("keys", {})
+        if not keys:
+            key_functions_text.insert(tk.END, "No keys configured for this layer\n")
+            return
+        
+        # Sort keys by number
+        sorted_keys = sorted(keys.items(), key=lambda x: int(x[0]))
+        
+        for key_num, key_data in sorted_keys:
+            if isinstance(key_data, dict):
+                key_type = key_data.get("type", "key")
+                if key_type == "app":
+                    shortcut = key_data.get("shortcut", "")
+                    command = key_data.get("command", "")
+                    color = key_data.get("color")
+                    key_functions_text.insert(tk.END, f"Key {key_num}: APP\n")
+                    key_functions_text.insert(tk.END, f"  Shortcut: {shortcut}\n")
+                    key_functions_text.insert(tk.END, f"  Command: {command}\n")
+                    if color:
+                        key_functions_text.insert(tk.END, f"  Color: {color}\n")
+                else:
+                    code = key_data.get("code", "")
+                    color = key_data.get("color")
+                    key_functions_text.insert(tk.END, f"Key {key_num}: {code}\n")
+                    if color:
+                        key_functions_text.insert(tk.END, f"  Color: {color}\n")
+            else:
+                key_functions_text.insert(tk.END, f"Key {key_num}: {key_data}\n")
+            key_functions_text.insert(tk.END, "\n")
     
     def on_layer_click(layer_id):
         """Handle layer button clicks"""
         update_layer_display(layer_id)
+        update_key_functions(layer_id)
         # Update the main app's layer selection
         if hasattr(app, 'layer_select'):
             app.layer_select.set(str(layer_id))
@@ -206,8 +283,9 @@ def create_layer_indicator():
     def refresh_display():
         current_layer = layer_select.get() if hasattr(app, 'layer_select') else "1"
         update_layer_display(current_layer)
+        update_key_functions(current_layer)
     
-    tk.Button(indicator_window, text="Refresh Display", command=refresh_display).pack(pady=10)
+    tk.Button(left_frame, text="Refresh Display", command=refresh_display).pack(pady=10)
     
     # Initial update
     refresh_display()
