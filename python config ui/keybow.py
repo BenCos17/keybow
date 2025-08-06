@@ -452,8 +452,72 @@ def download_and_install_firmware(raw_url, commit_hash):
         # Copy to Keybow directory
         keybow_path = get_keybow_path()
         if keybow_path:
-            shutil.copy2(tmp_file_path, os.path.join(keybow_path, 'code.py'))
-            messagebox.showinfo("Success", f"Firmware updated to commit {commit_hash}!\nPlease restart your Keybow2040.")
+            try:
+                shutil.copy2(tmp_file_path, os.path.join(keybow_path, 'code.py'))
+                messagebox.showinfo("Success", f"Firmware updated to commit {commit_hash}!\nPlease restart your Keybow2040.")
+            except PermissionError:
+                # Handle permission denied error
+                error_dialog = tk.Toplevel()
+                error_dialog.title("Permission Error")
+                error_dialog.geometry("500x400")
+                
+                tk.Label(error_dialog, text="Permission Denied!", font=("Arial", 14, "bold"), fg="red").pack(pady=10)
+                
+                solution_text = """
+The Keybow2040 is currently read-only or locked by Windows.
+
+Solutions to try:
+
+1. **Unplug and replug** the Keybow2040 USB cable
+   - This often fixes the permission issue
+
+2. **Eject and reconnect** the Keybow2040:
+   - Right-click the Keybow2040 drive in File Explorer
+   - Select "Eject"
+   - Unplug and replug the USB cable
+
+3. **Check if Keybow2040 is in use**:
+   - Close any programs that might be accessing it
+   - Make sure no file explorer windows are open to the drive
+
+4. **Try manual installation**:
+   - The firmware has been saved to Downloads
+   - Copy it manually to your Keybow2040
+                """
+                
+                text_widget = tk.Text(error_dialog, height=15, width=60)
+                text_widget.pack(pady=10, padx=10)
+                text_widget.insert(tk.END, solution_text)
+                text_widget.config(state=tk.DISABLED)
+                
+                # Save to Downloads as fallback
+                save_path = os.path.join(os.path.expanduser("~"), "Downloads", "code.py")
+                shutil.copy2(tmp_file_path, save_path)
+                
+                def try_again():
+                    error_dialog.destroy()
+                    # Try to get the path again (in case user reconnected)
+                    new_keybow_path = get_keybow_path()
+                    if new_keybow_path:
+                        try:
+                            shutil.copy2(tmp_file_path, os.path.join(new_keybow_path, 'code.py'))
+                            messagebox.showinfo("Success", f"Firmware updated to commit {commit_hash}!\nPlease restart your Keybow2040.")
+                        except PermissionError:
+                            messagebox.showerror("Still Locked", "The Keybow2040 is still locked.\nPlease try the manual installation method.")
+                    else:
+                        messagebox.showinfo("Manual Installation", f"Firmware saved to: {save_path}\nPlease copy this file to your Keybow2040 manually.")
+                
+                def manual_install():
+                    error_dialog.destroy()
+                    messagebox.showinfo("Manual Installation", f"Firmware saved to: {save_path}\nPlease copy this file to your Keybow2040 manually.")
+                
+                button_frame = tk.Frame(error_dialog)
+                button_frame.pack(pady=10)
+                tk.Button(button_frame, text="Try Again", command=try_again, bg="green", fg="white").pack(side=tk.LEFT, padx=5)
+                tk.Button(button_frame, text="Manual Install", command=manual_install, bg="blue", fg="white").pack(side=tk.LEFT, padx=5)
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to install firmware: {e}")
         else:
             # If we can't find the Keybow path, save to a known location
             save_path = os.path.join(os.path.expanduser("~"), "Downloads", "code.py")
