@@ -10,11 +10,20 @@ from pathlib import Path
 
 # Global configuration object
 config = {}
+current_layer_display = None  # For updating the layer display
 
 # GitHub repository information
 GITHUB_REPO = "BenCos17/keybow"
 GITHUB_API_BASE = "https://api.github.com/repos"
 FIRMWARE_PATH = "keybow%20files/code.py"  # Path to your firmware file in the repository (URL encoded)
+
+# Keybow2040 layout - 4x4 grid
+KEYBOW_LAYOUT = [
+    [0,  1,  2,  3],
+    [4,  5,  6,  7],
+    [8,  9,  10, 11],
+    [12, 13, 14, 15]
+]
 
 # Preset configurations for easy setup
 PRESET_LAYERS = {
@@ -83,6 +92,125 @@ PRESET_APPS = {
     "Device Manager": {"shortcut": "WIN+R", "command": "devmgmt.msc"},
     "Services": {"shortcut": "WIN+R", "command": "services.msc"}
 }
+
+def create_key_map():
+    """Create a visual key map showing the Keybow2040 layout"""
+    map_window = tk.Toplevel()
+    map_window.title("Keybow2040 Key Map")
+    map_window.geometry("400x500")
+    
+    # Title
+    tk.Label(map_window, text="Keybow2040 Layout", font=("Arial", 16, "bold")).pack(pady=10)
+    
+    # Create the 4x4 grid
+    grid_frame = tk.Frame(map_window)
+    grid_frame.pack(pady=10)
+    
+    key_buttons = {}
+    for row in range(4):
+        for col in range(4):
+            key_num = KEYBOW_LAYOUT[row][col]
+            btn = tk.Button(grid_frame, text=str(key_num), width=8, height=3, 
+                          font=("Arial", 12, "bold"))
+            btn.grid(row=row, column=col, padx=2, pady=2)
+            key_buttons[key_num] = btn
+            
+            # Color code the keys
+            if key_num == 0:
+                btn.config(bg="lightgreen", text="0\nModifier")
+            elif key_num <= 8:
+                btn.config(bg="lightblue", text=f"{key_num}\nLayer\nSelector")
+            else:
+                btn.config(bg="lightgray", text=f"{key_num}\nContent\nKey")
+    
+    # Legend
+    legend_frame = tk.Frame(map_window)
+    legend_frame.pack(pady=10)
+    
+    tk.Label(legend_frame, text="Legend:", font=("Arial", 12, "bold")).pack()
+    
+    legend_items = [
+        ("Key 0", "Modifier (Green) - Hold to switch layers"),
+        ("Keys 1-8", "Layer Selectors (Blue) - Choose which layer to use"),
+        ("Keys 9-15", "Content Keys (Gray) - Actual functions for each layer")
+    ]
+    
+    for key, desc in legend_items:
+        item_frame = tk.Frame(legend_frame)
+        item_frame.pack(anchor=tk.W, pady=2)
+        tk.Label(item_frame, text=key, font=("Arial", 10, "bold"), width=10).pack(side=tk.LEFT)
+        tk.Label(item_frame, text=desc, font=("Arial", 9)).pack(side=tk.LEFT)
+    
+    # Instructions
+    instructions = """
+How to use:
+1. Hold Key 0 (modifier) to enter layer selection mode
+2. Press Keys 1-8 to select a layer
+3. Release both keys to activate the layer
+4. Use Keys 9-15 for the layer's functions
+    """
+    tk.Label(map_window, text=instructions, justify=tk.LEFT, fg="blue").pack(pady=10)
+
+def create_layer_indicator():
+    """Create a visual indicator showing current layer and available layers"""
+    indicator_window = tk.Toplevel()
+    indicator_window.title("Current Layer Status")
+    indicator_window.geometry("500x400")
+    
+    # Title
+    tk.Label(indicator_window, text="Layer Status", font=("Arial", 16, "bold")).pack(pady=10)
+    
+    # Current layer display
+    current_frame = tk.Frame(indicator_window)
+    current_frame.pack(pady=10)
+    tk.Label(current_frame, text="Current Layer:", font=("Arial", 12, "bold")).pack()
+    
+    global current_layer_display
+    current_layer_display = tk.Label(current_frame, text="None", font=("Arial", 14), fg="red")
+    current_layer_display.pack()
+    
+    # Available layers
+    layers_frame = tk.Frame(indicator_window)
+    layers_frame.pack(pady=10)
+    tk.Label(layers_frame, text="Available Layers:", font=("Arial", 12, "bold")).pack()
+    
+    # Create layer buttons
+    layer_buttons = {}
+    for layer_id in range(1, 9):
+        btn = tk.Button(layers_frame, text=f"Layer {layer_id}", width=10, height=2)
+        btn.pack(side=tk.LEFT, padx=5, pady=5)
+        layer_buttons[layer_id] = btn
+    
+    def update_layer_display(layer_id):
+        """Update the current layer display"""
+        if current_layer_display:
+            if layer_id in config.get("layers", {}):
+                layer_name = config["layers"][layer_id].get("name", f"Layer {layer_id}")
+                current_layer_display.config(text=f"{layer_id}: {layer_name}", fg="green")
+            else:
+                current_layer_display.config(text=f"{layer_id}: Not configured", fg="orange")
+    
+    def on_layer_click(layer_id):
+        """Handle layer button clicks"""
+        update_layer_display(layer_id)
+        # Update the main app's layer selection
+        if hasattr(app, 'layer_select'):
+            app.layer_select.set(str(layer_id))
+            show_keys()
+    
+    # Bind layer buttons
+    for layer_id, btn in layer_buttons.items():
+        btn.config(command=lambda lid=layer_id: on_layer_click(lid))
+    
+    # Update button
+    def refresh_display():
+        current_layer = layer_select.get() if hasattr(app, 'layer_select') else "1"
+        update_layer_display(current_layer)
+    
+    tk.Button(indicator_window, text="Refresh Display", command=refresh_display).pack(pady=10)
+    
+    # Initial update
+    refresh_display()
 
 def check_for_updates():
     """Check for updates from GitHub"""
@@ -689,6 +817,13 @@ key_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
 tk.Button(key_frame, text="Add App Key", command=add_app_key).pack(side=tk.LEFT, padx=5)
 
+# Visual tools
+visual_frame = tk.LabelFrame(top_frame, text="Visual Tools")
+visual_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+tk.Button(visual_frame, text="Key Map", command=create_key_map, bg="purple", fg="white").pack(side=tk.LEFT, padx=5)
+tk.Button(visual_frame, text="Layer Status", command=create_layer_indicator, bg="green", fg="white").pack(side=tk.LEFT, padx=5)
+
 # Layer selection
 layer_select_frame = tk.Frame(app)
 layer_select_frame.pack(fill=tk.X, padx=10, pady=5)
@@ -714,8 +849,10 @@ Quick Start Guide:
 3. Use "Add App Key" to add individual app shortcuts
 4. Use "Upload Config" to send your config directly to the Keybow2040 board
 5. Use "Check Updates" to automatically update the firmware from GitHub
-6. Edit keys directly in the text area or use the buttons above
-7. Layer IDs must be 1-8, Key numbers must be 9-15 for content
+6. Use "Key Map" to see the physical layout of your Keybow2040
+7. Use "Layer Status" to see which layer is currently active
+8. Edit keys directly in the text area or use the buttons above
+9. Layer IDs must be 1-8, Key numbers must be 9-15 for content
 """
 tk.Label(app, text=instructions, justify=tk.LEFT, fg="blue").pack(padx=10, pady=5)
 
